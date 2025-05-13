@@ -1,5 +1,5 @@
 {
-    "name": "phpts/php-ts-gen",
+    "name": "letamanoir/php-ts-gen",
     "description": "Generate TypeScript types from your PHP Data Transfer Objects (DTOs)",
     "keywords": [
         "PhpTs",
@@ -24,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "PhpTs\\PhpTsGen\\": "src"
+            "PhpTs\\Gen\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "PhpTs\\PhpTsGen\\Tests\\": "tests"
+            "PhpTs\\Gen\\Tests\\": "tests"
         }
     },
     "scripts": {
