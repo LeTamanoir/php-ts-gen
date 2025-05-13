@@ -1,7 +1,7 @@
 # Generate TypeScript types from your PHP Data Transfer Objects (DTOs)
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/phpts/php-ts-gen.svg?style=flat-square)](https://packagist.org/packages/phpts/php-ts-gen)
-[![Tests](https://img.shields.io/github/actions/workflow/status/phpts/php-ts-gen/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/phpts/php-ts-gen/actions/workflows/run-tests.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/phpts/php-ts-gen/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/LeTamanoir/php-ts-gen/actions/workflows/run-tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/phpts/php-ts-gen.svg?style=flat-square)](https://packagist.org/packages/phpts/php-ts-gen)
 
 This is where your description should go. Try and limit it to a paragraph or two. Consider adding a small example.

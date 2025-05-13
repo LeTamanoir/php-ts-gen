@@ -5,7 +5,7 @@
         "PhpTs",
         "php-ts-gen"
     ],
-    "homepage": "https://github.com/phpts/php-ts-gen",
+    "homepage": "https://github.com/LeTamanoir/php-ts-gen",
     "license": "MIT",
     "authors": [
         {
@@ -34,7 +34,7 @@
     },
     "scripts": {
         "test": "vendor/bin/pest",
-            "test-coverage": "vendor/bin/pest --coverage",
+        "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
     },
     "config": {
