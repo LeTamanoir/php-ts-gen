@@ -1,5 +1,44 @@
 <?php
 
+use PhpTs\Gen;
+
+class Dto
+{
+    /**
+     * @param  string[]  $tags
+     * @param  Dto[]  $zip_codes
+     */
+    public function __construct(
+        public string $name,
+        public Dto $friend,
+        public int $age,
+        public true $isActive,
+        public string|bool $strange,
+        public array $tags,
+        public ?string $email,
+        public ?string $phone,
+        public ?string $address,
+        public ?string $city,
+        public ?string $state,
+        public ?array $zip_codes,
+        public ?string $country,
+    ) {}
+}
+
+class Dto2
+{
+    public function __construct(
+        public Dto $friend,
+        public ?string $country,
+    ) {}
+}
+
 it('can test', function () {
-    expect(true)->toBeTrue();
+
+    (new Gen)
+        ->generate([
+            Dto::class,
+            Dto2::class,
+        ]);
+
 });

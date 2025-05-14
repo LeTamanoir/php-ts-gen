@@ -24,12 +24,12 @@
     },
     "autoload": {
         "psr-4": {
-            "PhpTs\\Gen\\": "src"
+            "PhpTs\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "PhpTs\\Gen\\Tests\\": "tests"
+            "PhpTs\\Tests\\": "tests"
         }
     },
     "scripts": {
