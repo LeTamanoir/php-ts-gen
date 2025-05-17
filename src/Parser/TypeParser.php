@@ -87,8 +87,8 @@ class TypeParser
      */
     private static function parseNamedType(ReflectionNamedType $type, ReflectionProperty $property): TypeNode
     {
-        if ($type->isBuiltin()) {
-            return match ($type->getName()) {
+        $type_node = $type->isBuiltin()
+            ? match ($type->getName()) {
                 'array' => self::parseArrayType($property),
                 'bool' => new BooleanTypeNode,
                 'float', 'int' => new NumberTypeNode,
@@ -96,10 +96,14 @@ class TypeParser
                 'string' => new StringTypeNode,
                 'mixed' => new AnyTypeNode,
                 default => throw new UnsupportedTypeException($type->getName(), $property),
-            };
+            } : self::parseClass($type->getName());
+
+        // If the type is nullable, create a union with null
+        if ($type->allowsNull()) {
+            return new UnionTypeNode([$type_node, new NullTypeNode]);
         }
 
-        return self::parseClass($type->getName());
+        return $type_node;
     }
 
     /**
