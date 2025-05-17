@@ -6,13 +6,13 @@ class Dto
 {
     /**
      * @param  string[]  $tags
-     * @param  Dto[]  $zip_codes
+     * @param  array<string, Dto>  $zip_codes
      */
     public function __construct(
         public string $name,
         public Dto $friend,
         public int $age,
-        public true $isActive,
+        public bool $isActive,
         public string|bool $strange,
         public array $tags,
         public ?string $email,
@@ -35,10 +35,12 @@ class Dto2
 
 it('can test', function () {
 
-    (new Gen)
+    $types = (new Gen)
         ->generate([
             Dto::class,
             Dto2::class,
         ]);
+
+    dd($types);
 
 });
