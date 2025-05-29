@@ -2,11 +2,11 @@
 
 namespace PhpTs\Parser;
 
-use PhpTs\Exceptions\EmptyTypeException;
+use Exception;
+use PhpTs\Exceptions\EmptyParamTagTypeException;
 use PhpTs\Exceptions\MissingDocBlockException;
 use PhpTs\Exceptions\MissingParamTagException;
 use PhpTs\Exceptions\MissingTypeException;
-use PhpTs\Exceptions\UnknownTypeException;
 use PhpTs\Exceptions\UnsupportedTypeException;
 use PhpTs\Parser\Nodes\Builtin\AnyTypeNode;
 use PhpTs\Parser\Nodes\Builtin\BooleanTypeNode;
@@ -86,7 +86,7 @@ class TypeParser
             $type instanceof ReflectionNamedType => $this->parseNamedType($type, $property),
             $type instanceof ReflectionUnionType => $this->parseUnionType($type, $property),
             $type instanceof ReflectionIntersectionType => $this->parseIntersectionType($type, $property),
-            default => throw new UnknownTypeException($property),
+            default => new Exception('Unknown type: '.$type::class),
         };
     }
 
@@ -166,7 +166,7 @@ class TypeParser
         $type_name = $matches[1];
 
         if ($type_name === '') {
-            throw new EmptyTypeException($property);
+            throw new EmptyParamTagTypeException($property);
         }
 
         return $this->parseArrayTypeString($type_name, $property);
