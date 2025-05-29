@@ -12,13 +12,13 @@ abstract readonly class TypeNode
     /**
      * Convert this node to its TypeScript representation
      */
-    abstract public function toTypeScript(?TypeNode $parent_type = null): string;
+    abstract public function toTypeScript(ToTypeScriptContext $context): string;
 
-    /**
-     * Optimize this node to its most basic form.
-     */
-    public function optimize(): TypeNode
-    {
-        return $this;
-    }
+    // /**
+    //  * Optimize this node to its most basic form.
+    //  */
+    // public function optimize(): TypeNode
+    // {
+    //     return $this;
+    // }
 }

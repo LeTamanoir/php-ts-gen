@@ -31,23 +31,31 @@ use ReflectionUnionType;
 class TypeParser
 {
     /**
+     * Array of classes already seen by the parser
+     *
      * @var array<string, true>
      */
-    public static array $processed_classes = [];
+    protected array $processed_classes;
+
+    /**
+     * Create a new TypeParser instance
+     */
+    public function __construct()
+    {
+        $this->processed_classes = [];
+    }
 
     /**
      * Parse a class into our AST
      */
-    public static function parseClass(string $class_name): TypeNode
+    public function parseClass(string $class_name): TypeNode
     {
-
         // If we've already processed this class, return a reference to it
-        if (isset(self::$processed_classes[$class_name])) {
+        if (isset($this->processed_classes[$class_name])) {
             return new ReferenceTypeNode($class_name);
+        } else {
+            $this->processed_classes[$class_name] = true;
         }
-
-        // Mark this class as being processed
-        self::$processed_classes[$class_name] = true;
 
         $class_reflection = new ReflectionClass($class_name);
 
@@ -62,7 +70,7 @@ class TypeParser
 
             $properties[] = new PropertyTypeNode(
                 $prop->getName(),
-                self::parseType($prop_type, $prop)
+                $this->parseType($prop_type, $prop)
             );
         }
 
@@ -72,12 +80,12 @@ class TypeParser
     /**
      * Parse a reflection type into our AST
      */
-    private static function parseType(ReflectionType $type, ReflectionProperty $property): TypeNode
+    private function parseType(ReflectionType $type, ReflectionProperty $property): TypeNode
     {
         return match (true) {
-            $type instanceof ReflectionNamedType => self::parseNamedType($type, $property),
-            $type instanceof ReflectionUnionType => self::parseUnionType($type, $property),
-            $type instanceof ReflectionIntersectionType => self::parseIntersectionType($type, $property),
+            $type instanceof ReflectionNamedType => $this->parseNamedType($type, $property),
+            $type instanceof ReflectionUnionType => $this->parseUnionType($type, $property),
+            $type instanceof ReflectionIntersectionType => $this->parseIntersectionType($type, $property),
             default => throw new UnknownTypeException($property),
         };
     }
@@ -85,18 +93,18 @@ class TypeParser
     /**
      * Parse a named type (built-in or class reference)
      */
-    private static function parseNamedType(ReflectionNamedType $type, ReflectionProperty $property): TypeNode
+    private function parseNamedType(ReflectionNamedType $type, ReflectionProperty $property): TypeNode
     {
         $type_node = $type->isBuiltin()
             ? match ($type->getName()) {
-                'array' => self::parseArrayType($property),
+                'array' => $this->parseArrayType($property),
                 'bool' => new BooleanTypeNode,
                 'float', 'int' => new NumberTypeNode,
                 'null' => new NullTypeNode,
                 'string' => new StringTypeNode,
                 'mixed' => new AnyTypeNode,
                 default => throw new UnsupportedTypeException($type->getName(), $property),
-            } : self::parseClass($type->getName());
+            } : $this->parseClass($type->getName());
 
         // If the type is nullable, create a union with null
         if ($type->allowsNull()) {
@@ -109,10 +117,10 @@ class TypeParser
     /**
      * Parse a union type
      */
-    private static function parseUnionType(ReflectionUnionType $type, ReflectionProperty $property): TypeNode
+    private function parseUnionType(ReflectionUnionType $type, ReflectionProperty $property): TypeNode
     {
         $types = array_map(
-            fn (ReflectionType $t) => self::parseType($t, $property),
+            fn (ReflectionType $t) => $this->parseType($t, $property),
             $type->getTypes()
         );
 
@@ -122,10 +130,10 @@ class TypeParser
     /**
      * Parse an intersection type
      */
-    private static function parseIntersectionType(ReflectionIntersectionType $type, ReflectionProperty $property): TypeNode
+    private function parseIntersectionType(ReflectionIntersectionType $type, ReflectionProperty $property): TypeNode
     {
         $types = array_map(
-            fn (ReflectionType $t) => self::parseType($t, $property),
+            fn (ReflectionType $t) => $this->parseType($t, $property),
             $type->getTypes()
         );
 
@@ -135,7 +143,7 @@ class TypeParser
     /**
      * Parse array type from property docblock
      */
-    private static function parseArrayType(ReflectionProperty $property): TypeNode
+    private function parseArrayType(ReflectionProperty $property): TypeNode
     {
         $doc_comment = $property->getDeclaringClass()->getConstructor()->getDocComment();
 
@@ -161,22 +169,22 @@ class TypeParser
             throw new EmptyTypeException($property);
         }
 
-        return self::parseArrayTypeString($type_name, $property);
+        return $this->parseArrayTypeString($type_name, $property);
     }
 
     /**
      * Parse array type string into ArrayTypeNode
      */
-    private static function parseArrayTypeString(string $type_name, ReflectionProperty $property): TypeNode
+    private function parseArrayTypeString(string $type_name, ReflectionProperty $property): TypeNode
     {
         // Traditional array notation: T[]
         if (preg_match('/^([a-zA-Z][a-zA-Z0-9_]+)\[\]$/', $type_name, $matches)) {
-            return new ArrayTypeNode(self::parseTypeString($matches[1], $property));
+            return new ArrayTypeNode($this->parseTypeString($matches[1], $property));
         }
 
         // List notation: list<T>
         if (preg_match('/^list<([a-zA-Z][a-zA-Z0-9_]+)>$/', $type_name, $matches)) {
-            return new ArrayTypeNode(self::parseTypeString($matches[1], $property));
+            return new ArrayTypeNode($this->parseTypeString($matches[1], $property));
         }
 
         // Record notation: array<K, V>
@@ -185,14 +193,14 @@ class TypeParser
             $value_type = trim($matches[2]);
 
             return new RecordTypeNode(
-                self::parseTypeString($key_type, $property),
-                self::parseTypeString($value_type, $property)
+                $this->parseTypeString($key_type, $property),
+                $this->parseTypeString($value_type, $property)
             );
         }
 
         // Simple array notation: array<T>
         if (preg_match('/^array<([a-zA-Z][a-zA-Z0-9_]+)>$/', $type_name, $matches)) {
-            return new ArrayTypeNode(self::parseTypeString($matches[1], $property));
+            return new ArrayTypeNode($this->parseTypeString($matches[1], $property));
         }
 
         throw new UnsupportedTypeException($type_name, $property);
@@ -201,12 +209,12 @@ class TypeParser
     /**
      * Parse a type string into a TypeNode
      */
-    private static function parseTypeString(string $type, ReflectionProperty $property): TypeNode
+    private function parseTypeString(string $type, ReflectionProperty $property): TypeNode
     {
         // Handle union types
         if (str_contains($type, '|')) {
             $types = array_map(
-                fn (string $t) => self::parseTypeString(trim($t), $property),
+                fn (string $t) => $this->parseTypeString(trim($t), $property),
                 explode('|', $type)
             );
 
@@ -216,7 +224,7 @@ class TypeParser
         // Handle intersection types
         if (str_contains($type, '&')) {
             $types = array_map(
-                fn (string $t) => self::parseTypeString(trim($t), $property),
+                fn (string $t) => $this->parseTypeString(trim($t), $property),
                 explode('&', $type)
             );
 
@@ -225,7 +233,7 @@ class TypeParser
 
         // Handle class types
         if (class_exists($type)) {
-            return self::parseClass($type);
+            return $this->parseClass($type);
         }
 
         // Handle single type

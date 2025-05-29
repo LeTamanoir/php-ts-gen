@@ -2,6 +2,7 @@
 
 namespace PhpTs\Parser\Nodes\Complex;
 
+use PhpTs\Parser\Nodes\ToTypeScriptContext;
 use PhpTs\Parser\Nodes\TypeNode;
 
 readonly class ArrayTypeNode extends TypeNode
@@ -10,8 +11,11 @@ readonly class ArrayTypeNode extends TypeNode
         public TypeNode $value_type,
     ) {}
 
-    public function toTypeScript(?TypeNode $parent_type = null): string
+    public function toTypeScript(ToTypeScriptContext $context): string
     {
-        return "{$this->value_type->toTypeScript($this)}[]";
+        return sprintf('%s[]', $this->value_type->toTypeScript(new ToTypeScriptContext(
+            parent_type: $this,
+            depth: $context->depth,
+        )));
     }
 }

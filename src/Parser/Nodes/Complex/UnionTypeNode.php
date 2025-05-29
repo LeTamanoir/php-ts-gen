@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpTs\Parser\Nodes\Complex;
 
+use PhpTs\Parser\Nodes\ToTypeScriptContext;
 use PhpTs\Parser\Nodes\TypeNode;
 
 readonly class UnionTypeNode extends TypeNode
@@ -15,53 +16,56 @@ readonly class UnionTypeNode extends TypeNode
         public readonly array $types,
     ) {}
 
-    public function toTypeScript(?TypeNode $parent_type = null): string
+    public function toTypeScript(ToTypeScriptContext $context): string
     {
         $types = array_map(
-            fn (TypeNode $type) => $type->toTypeScript($this),
+            fn (TypeNode $type) => $type->toTypeScript(new ToTypeScriptContext(
+                parent_type: $this,
+                depth: $context->depth,
+            )),
             $this->types
         );
 
         $type_str = implode(' | ', $types);
 
-        if ($parent_type instanceof IntersectionTypeNode || $parent_type instanceof UnionTypeNode) {
+        if ($context->parent_type instanceof IntersectionTypeNode || $context->parent_type instanceof UnionTypeNode) {
             return '('.$type_str.')';
         }
 
         return $type_str;
     }
 
-    public function optimize(): TypeNode
-    {
-        $unique_types = [];
+    // public function optimize(): TypeNode
+    // {
+    //     $unique_types = [];
 
-        foreach ($this->types as $type) {
-            $optimized = $type->optimize();
+    //     foreach ($this->types as $type) {
+    //         $optimized = $type->optimize();
 
-            if ($optimized instanceof UnionTypeNode) {
-                // Flatten nested unions
-                foreach ($optimized->types as $nested_type) {
-                    $unique_types[] = $nested_type;
-                }
+    //         if ($optimized instanceof UnionTypeNode) {
+    //             // Flatten nested unions
+    //             foreach ($optimized->types as $nested_type) {
+    //                 $unique_types[] = $nested_type;
+    //             }
 
-                continue;
-            }
+    //             continue;
+    //         }
 
-            // Check if we already have this type
-            $type_str = $optimized->toTypeScript($this);
-            if (! isset($unique_types[$type_str])) {
-                $unique_types[$type_str] = $optimized;
-            }
-        }
+    //         // Check if we already have this type
+    //         $type_str = $optimized->toTypeScript($this);
+    //         if (! isset($unique_types[$type_str])) {
+    //             $unique_types[$type_str] = $optimized;
+    //         }
+    //     }
 
-        $result = array_values($unique_types);
+    //     $result = array_values($unique_types);
 
-        // If we have only one type and it's not nullable, return it directly
-        if (count($result) === 1) {
-            return $result[0];
-        }
+    //     // If we have only one type and it's not nullable, return it directly
+    //     if (count($result) === 1) {
+    //         return $result[0];
+    //     }
 
-        // Otherwise, create a new union with the optimized types
-        return new UnionTypeNode($result);
-    }
+    //     // Otherwise, create a new union with the optimized types
+    //     return new UnionTypeNode($result);
+    // }
 }

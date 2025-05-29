@@ -1,6 +1,6 @@
 <?php
 
-use PhpTs\Gen;
+use PhpTs\Generator;
 
 class Dto
 {
@@ -14,13 +14,13 @@ class Dto
         public int $age,
         public bool $isActive,
         public string|bool $strange,
-        public array $tags,
+        public ?array $tags,
         public ?string $email,
         public ?string $phone,
         public ?string $address,
         public ?string $city,
         public ?string $state,
-        public ?array $zip_codes,
+        public array $zip_codes,
         public ?string $country,
     ) {}
 }
@@ -35,11 +35,10 @@ class Dto2
 
 it('can test', function () {
 
-    $types = (new Gen)
-        ->generate([
-            Dto::class,
-            Dto2::class,
-        ]);
+    $types = Generator::generate([
+        Dto::class,
+        Dto2::class,
+    ]);
 
     dd($types);
 

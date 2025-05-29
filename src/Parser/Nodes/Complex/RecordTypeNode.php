@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpTs\Parser\Nodes\Complex;
 
+use PhpTs\Parser\Nodes\ToTypeScriptContext;
 use PhpTs\Parser\Nodes\TypeNode;
 
 readonly class RecordTypeNode extends TypeNode
@@ -13,8 +14,18 @@ readonly class RecordTypeNode extends TypeNode
         public TypeNode $value_type,
     ) {}
 
-    public function toTypeScript(?TypeNode $parent_type = null): string
+    public function toTypeScript(ToTypeScriptContext $context): string
     {
-        return "Record<{$this->key_type->toTypeScript($this)}, {$this->value_type->toTypeScript($this)}>";
+        return sprintf(
+            'Record<%s, %s>',
+            $this->key_type->toTypeScript(new ToTypeScriptContext(
+                parent_type: $this,
+                depth: $context->depth,
+            )),
+            $this->value_type->toTypeScript(new ToTypeScriptContext(
+                parent_type: $this,
+                depth: $context->depth,
+            ))
+        );
     }
 }

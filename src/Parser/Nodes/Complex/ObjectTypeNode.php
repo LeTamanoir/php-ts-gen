@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpTs\Parser\Nodes\Complex;
 
+use PhpTs\Parser\Nodes\ToTypeScriptContext;
 use PhpTs\Parser\Nodes\TypeNode;
 
 readonly class ObjectTypeNode extends TypeNode
@@ -16,16 +17,19 @@ readonly class ObjectTypeNode extends TypeNode
         public array $properties,
     ) {}
 
-    public function toTypeScript(?TypeNode $parent_type = null): string
+    public function toTypeScript(ToTypeScriptContext $context): string
     {
         $properties = array_map(
-            fn (PropertyTypeNode $property) => $property->toTypeScript($this),
+            fn (PropertyTypeNode $property) => $property->toTypeScript(new ToTypeScriptContext(
+                parent_type: $this,
+                depth: $context->depth + 1,
+            )),
             $this->properties
         );
 
-        $type_str = '{'.implode('; ', $properties).'}';
+        $type_str = "{\n".implode(";\n", $properties)."\n}";
 
-        if ($parent_type === null) {
+        if ($context->parent_type === null) {
             return 'type '.$this->name.' = '.$type_str.';';
         }
 
