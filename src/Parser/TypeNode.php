@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Parser\Nodes;
+namespace PhpTs\Parser;
 
 /**
  * Base class for all type nodes.
@@ -13,12 +13,4 @@ abstract readonly class TypeNode
      * Convert this node to its TypeScript representation
      */
     abstract public function toTypeScript(ToTypeScriptContext $context): string;
-
-    // /**
-    //  * Optimize this node to its most basic form.
-    //  */
-    // public function optimize(): TypeNode
-    // {
-    //     return $this;
-    // }
 }

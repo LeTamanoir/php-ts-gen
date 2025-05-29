@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Parser\Nodes\Builtin;
-
-use PhpTs\Parser\Nodes\ToTypeScriptContext;
-use PhpTs\Parser\Nodes\TypeNode;
+namespace PhpTs\Parser;
 
 readonly class StringTypeNode extends TypeNode
 {

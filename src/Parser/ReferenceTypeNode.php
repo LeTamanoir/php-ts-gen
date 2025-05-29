@@ -1,9 +1,6 @@
 <?php
 
-namespace PhpTs\Parser\Nodes\Complex;
-
-use PhpTs\Parser\Nodes\ToTypeScriptContext;
-use PhpTs\Parser\Nodes\TypeNode;
+namespace PhpTs\Parser;
 
 readonly class ReferenceTypeNode extends TypeNode
 {

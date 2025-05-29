@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Parser\Nodes;
+namespace PhpTs\Parser;
 
 /**
  * Context for converting a TypeNode to TypeScript

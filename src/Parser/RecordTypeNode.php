@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Parser\Nodes\Complex;
-
-use PhpTs\Parser\Nodes\ToTypeScriptContext;
-use PhpTs\Parser\Nodes\TypeNode;
+namespace PhpTs\Parser;
 
 readonly class RecordTypeNode extends TypeNode
 {

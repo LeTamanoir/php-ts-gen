@@ -2,8 +2,8 @@
 
 namespace PhpTs;
 
-use PhpTs\Parser\Nodes\ToTypeScriptContext;
-use PhpTs\Parser\Nodes\TypeNode;
+use PhpTs\Parser\ToTypeScriptContext;
+use PhpTs\Parser\TypeNode;
 use PhpTs\Parser\TypeParser;
 
 class Generator
