@@ -1,8 +1,8 @@
-declare namespace PhpTs {
+declare namespace Typographos {
     namespace Tests {
         namespace Fixtures {
             export interface Child {
-                parent: PhpTs.Tests.Fixtures._Parent
+                parent: Typographos.Tests.Fixtures._Parent
                 parentName: string
             }
             export interface _Parent {

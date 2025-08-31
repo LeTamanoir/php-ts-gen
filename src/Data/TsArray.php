@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Data;
+namespace Typographos\Data;
 
 use InvalidArgumentException;
-use PhpTs\Queue;
+use Typographos\Queue;
 use ReflectionClass;
 use ReflectionProperty;
 

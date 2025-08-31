@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Data;
+namespace Typographos\Data;
 
 final class RenderCtx
 {

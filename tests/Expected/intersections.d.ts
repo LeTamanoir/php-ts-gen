@@ -1,4 +1,4 @@
-declare namespace PhpTs {
+declare namespace Typographos {
     namespace Tests {
         namespace Fixtures {
             export interface Intersections {

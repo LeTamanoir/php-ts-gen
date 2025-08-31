@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Attributes;
+namespace Typographos\Attributes;
 
 use Attribute;
 

@@ -1,4 +1,4 @@
-declare namespace PhpTs {
+declare namespace Typographos {
     namespace Tests {
         namespace Fixtures {
             export interface Arrays {
@@ -7,7 +7,7 @@ declare namespace PhpTs {
                 stringToIntObject: { [key: string]: number }
                 arrayKeyToIntObject: { [key: string]: number }
                 arrayKeyToIntObject_2: { [key: string]: number }
-                scalars: PhpTs.Tests.Fixtures.Scalars[]
+                scalars: Typographos.Tests.Fixtures.Scalars[]
                 withDocCommentInConstructor: string[]
             }
             export interface Scalars {

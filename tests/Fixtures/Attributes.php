@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Tests\Fixtures;
+namespace Typographos\Tests\Fixtures;
 
-use PhpTs\Attributes\TypeScript;
+use Typographos\Attributes\TypeScript;
 
 #[TypeScript]
 class Attributes

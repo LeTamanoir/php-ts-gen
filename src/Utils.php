@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs;
+namespace Typographos;
 
 class Utils
 {

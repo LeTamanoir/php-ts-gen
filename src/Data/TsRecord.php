@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Data;
+namespace Typographos\Data;
 
-use PhpTs\Utils;
+use Typographos\Utils;
 
 final class TsRecord implements TsType
 {
