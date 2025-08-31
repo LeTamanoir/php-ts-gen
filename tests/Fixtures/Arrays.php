@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpTs\Tests\Fixtures;
+namespace Typographos\Tests\Fixtures;
 
 class Arrays
 {
@@ -25,7 +25,7 @@ class Arrays
         /** @var array<string|int,int> */
         public array $arrayKeyToIntObject_2,
 
-        /** @var array<int,\PhpTs\Tests\Fixtures\Scalars> */
+        /** @var array<int,\Typographos\Tests\Fixtures\Scalars> */
         public array $scalars,
 
         public array $withDocCommentInConstructor,

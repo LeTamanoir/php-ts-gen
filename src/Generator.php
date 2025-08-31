@@ -1,19 +1,11 @@
 <?php
 
-namespace PhpTs;
+declare(strict_types=1);
+
+namespace Typographos;
 
 use FilesystemIterator;
 use InvalidArgumentException;
-use PhpTs\Attributes\TypeScript;
-use PhpTs\Data\RenderCtx;
-use PhpTs\Data\TsArray;
-use PhpTs\Data\TsIntersection;
-use PhpTs\Data\TsRaw;
-use PhpTs\Data\TsRecord;
-use PhpTs\Data\TsReference;
-use PhpTs\Data\TsScalar;
-use PhpTs\Data\TsType;
-use PhpTs\Data\TsUnion;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -24,6 +16,16 @@ use ReflectionType;
 use ReflectionUnionType;
 use RuntimeException;
 use SplFileInfo;
+use Typographos\Attributes\TypeScript;
+use Typographos\Data\RenderCtx;
+use Typographos\Data\TsArray;
+use Typographos\Data\TsIntersection;
+use Typographos\Data\TsRaw;
+use Typographos\Data\TsRecord;
+use Typographos\Data\TsReference;
+use Typographos\Data\TsScalar;
+use Typographos\Data\TsType;
+use Typographos\Data\TsUnion;
 
 class Generator
 {
