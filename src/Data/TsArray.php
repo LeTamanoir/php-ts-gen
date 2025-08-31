@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace PhpTs\Data;
 
 use InvalidArgumentException;
+use PhpTs\Queue;
+use ReflectionClass;
 use ReflectionProperty;
 
 final class TsArray implements TsType
@@ -18,69 +20,70 @@ final class TsArray implements TsType
         return $this->raw;
     }
 
-    public static function from(ReflectionProperty $prop): self
+    public static function from(ReflectionProperty $prop, Queue $queue): self
     {
         $declClass = $prop->getDeclaringClass();
 
-        $doc = $prop->getDocComment() ?: $declClass->getDocComment();
-
         $errorLoc = 'for property $'.$prop->getName().' in '.$declClass->getFileName().':'.$declClass->getStartLine();
 
-        if (! $doc) {
+        if ($doc = $prop->getDocComment()) {
+            if (! preg_match('/@var\s+([^*]+)/i', $doc, $m)) {
+                throw new InvalidArgumentException('Malformed PHPDoc ['.$doc.'] '.$errorLoc);
+            }
+        } elseif ($doc = $declClass->getConstructor()->getDocComment()) {
+            if (! preg_match('/@param\s+([^\s*]+)\s+\$'.preg_quote($prop->getName()).'/i', $doc, $m)) {
+                throw new InvalidArgumentException('Malformed PHPDoc ['.$doc.'] '.$errorLoc);
+            }
+        } else {
             throw new InvalidArgumentException('Missing doc comment '.$errorLoc);
         }
 
-        if (! preg_match('/@var\s+([^\s*]+)/i', $doc, $m)) {
-            throw new InvalidArgumentException('Malformed PHPDoc '.$doc.' '.$errorLoc);
-        }
-
         try {
-            return self::parseArrayType(trim($m[1]));
+            return self::parseArrayType(trim($m[1]), $queue);
         } catch (InvalidArgumentException $e) {
             throw new InvalidArgumentException($e->getMessage().' '.$errorLoc);
         }
     }
 
-    private static function parseArrayType(string $type, int $depth = 0): TsType
+    private static function parseArrayType(string $type, Queue $queue, int $depth = 0): TsType
     {
         // list<T>
         if (preg_match('/^list<(.+)>$/i', $type, $m)) {
-            $t = explode(',', trim($m[1]), 2);
+            $t = self::splitTopLevel(trim($m[1]));
             if (count($t) !== 1) {
                 throw new InvalidArgumentException('Expected exactly one type argument when evaluating ['.$type.']');
             }
-            $valTs = self::parseArrayType($t[0], $depth + 1);
+            $valTs = self::parseArrayType($t[0], $queue, $depth + 1);
 
             return self::asArray($valTs);
         }
 
         // non-empty-list<T>
         if (preg_match('/^non-empty-list<(.+)>$/i', $type, $m)) {
-            $t = explode(',', trim($m[1]), 2);
+            $t = self::splitTopLevel(trim($m[1]));
             if (count($t) !== 1) {
                 throw new InvalidArgumentException('Expected exactly one type argument when evaluating ['.$type.']');
             }
-            $valTs = self::parseArrayType($t[0], $depth + 1);
+            $valTs = self::parseArrayType($t[0], $queue, $depth + 1);
 
             return self::asNonEmptyArray($valTs);
         }
 
         // array<K,V>
         if (preg_match('/^array<(.+)>$/i', $type, $m)) {
-            $kv = explode(',', trim($m[1]), 2);
+            $kv = self::splitTopLevel(trim($m[1]));
             if (count($kv) !== 2) {
                 throw new InvalidArgumentException('Expected array<K,V> to have exactly two type args when evaluating ['.$type.']');
             }
             [$kRaw, $vRaw] = [trim($kv[0]), trim($kv[1])];
 
             $keyKind = self::classifyArrayKey($kRaw);
-            $valTs = self::parseArrayType($vRaw, $depth + 1);
+            $valTs = self::parseArrayType($vRaw, $queue, $depth + 1);
 
             return match ($keyKind) {
                 ArrayKeyType::int => self::asArray($valTs),
                 ArrayKeyType::string => self::asIndexString($valTs),
                 ArrayKeyType::both => self::asIndexString($valTs),
-                ArrayKeyType::other => self::asIndexString($valTs),
             };
         }
 
@@ -88,19 +91,53 @@ final class TsArray implements TsType
             throw new InvalidArgumentException('Unsupported PHPDoc array type '.trim($type));
         }
 
-        return TsScalar::from($type);
+        $userDefined = class_exists($type) && new ReflectionClass($type)->isUserDefined();
+
+        if ($userDefined) {
+            $queue->enqueue($type);
+        }
+
+        return $userDefined ? new TsReference($type) : TsScalar::from($type);
     }
 
     /**
-     * Classify array key K in array<K,V> into int|string|both|other
+     * Split by commas at top level, ignores commas inside generics  <...>
      */
+    private static function splitTopLevel(string $s): array
+    {
+        $parts = [];
+        $buf = '';
+        $depth = 0;
+
+        foreach (str_split($s) as $ch) {
+            if ($ch === '<') {
+                $depth++;
+                $buf .= $ch;
+            } elseif ($ch === '>') {
+                $depth = max(0, $depth - 1);
+                $buf .= $ch;
+            } elseif ($ch === ',' && $depth === 0) {
+                $parts[] = trim($buf);
+                $buf = '';
+            } else {
+                $buf .= $ch;
+            }
+        }
+
+        if ($buf !== '') {
+            $parts[] = trim($buf);
+        }
+
+        return $parts;
+    }
+
     protected static function classifyArrayKey(string $key): ArrayKeyType
     {
         $keys = array_map(trim(...), explode('|', trim($key)));
 
         $hasInt = false;
         $hasStr = false;
-        $other = false;
+
         foreach ($keys as $k) {
             switch (strtolower($k)) {
                 case 'int':
@@ -126,24 +163,20 @@ final class TsArray implements TsType
                     break;
 
                 default:
-                    $other = true;
+                    throw new InvalidArgumentException('Unsupported array key type ['.$k.']');
             }
         }
 
-        if ($other) {
-            return ArrayKeyType::other;
-        }
         if ($hasInt && $hasStr) {
             return ArrayKeyType::both;
         }
         if ($hasInt) {
             return ArrayKeyType::int;
         }
-        if ($hasStr) {
-            return ArrayKeyType::string;
-        }
 
-        return ArrayKeyType::other;
+        // if ($hasStr) {
+        return ArrayKeyType::string;
+        // }
     }
 
     protected static function asArray(TsType $ts): self
@@ -163,7 +196,6 @@ final class TsArray implements TsType
     protected static function asIndexString(TsType $ts): self
     {
         $rendered = $ts->render(RenderCtx::root());
-
 
         return new self('{ [key: string]: '.$rendered.' }');
     }

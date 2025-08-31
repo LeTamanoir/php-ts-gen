@@ -9,5 +9,4 @@ enum ArrayKeyType
     case int;
     case string;
     case both;
-    case other;
 }

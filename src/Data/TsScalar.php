@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpTs\Data;
 
+use InvalidArgumentException;
+
 enum TsScalar implements TsType
 {
     case boolean;
@@ -32,7 +34,9 @@ enum TsScalar implements TsType
             'object' => TsScalar::object,
             'mixed' => TsScalar::any,
             'null' => TsScalar::null,
-            default => TsScalar::unknown,
+            'true' => TsScalar::true,
+            'false' => TsScalar::false,
+            default => throw new InvalidArgumentException('Unsupported scalar type '.$phpScalar),
         };
     }
 }

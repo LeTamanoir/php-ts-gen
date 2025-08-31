@@ -18,18 +18,18 @@
         "php": "^8.4"
     },
     "require-dev": {
-        "pestphp/pest": "^3.0",
-        "laravel/pint": "^1.0",
-        "spatie/ray": "^1.28"
+        "laravel/pint": "^1.24",
+        "pestphp/pest": "^3.8",
+        "symfony/var-dumper": "^7.3"
     },
     "autoload": {
         "psr-4": {
-            "PhpTs\\Gen\\": "src"
+            "PhpTs\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "PhpTs\\Gen\\Tests\\": "tests"
+            "PhpTs\\Tests\\": "tests"
         }
     },
     "scripts": {

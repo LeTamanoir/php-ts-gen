@@ -3,6 +3,7 @@
 namespace PhpTs;
 
 use FilesystemIterator;
+use InvalidArgumentException;
 use PhpTs\Attributes\TypeScript;
 use PhpTs\Data\RenderCtx;
 use PhpTs\Data\TsArray;
@@ -26,11 +27,6 @@ use SplFileInfo;
 
 class Generator
 {
-    /**
-     * @var array<sring, bool>
-     */
-    private array $visited = [];
-
     public function __construct(private Config $config) {}
 
     public function generate(string ...$classNames)
@@ -40,19 +36,13 @@ class Generator
         }
 
         if (count($classNames) === 0) {
-            throw new RuntimeException('No classes to generate');
+            throw new InvalidArgumentException('No classes to generate');
         }
 
         $queue = new Queue($classNames);
         $records = [];
 
         while ($className = $queue->shift()) {
-            if (isset($this->visited[$className])) {
-                continue;
-            }
-
-            $this->visited[$className] = true;
-
             $records[] = self::generateTsRecord($className, $queue);
         }
 
@@ -65,7 +55,10 @@ class Generator
 
         $ts = $this->renderNamespaceTree($ctx, $nsTree);
 
-        if (! file_put_contents($this->config->filePath, $ts)) {
+        if (
+            (file_exists($this->config->filePath) && ! is_writable($this->config->filePath)) ||
+            @file_put_contents($this->config->filePath, $ts) === false
+        ) {
             throw new RuntimeException('Failed to write generated types to file '.$this->config->filePath);
         }
     }
@@ -90,12 +83,9 @@ class Generator
 
         $classes = [];
         foreach (get_declared_classes() as $class) {
-            try {
-                $ref = new ReflectionClass($class);
-                if ($ref->getAttributes(TypeScript::class)) {
-                    $classes[] = $class;
-                }
-            } catch (\Throwable) {
+            $ref = new ReflectionClass($class);
+            if ($ref->getAttributes(TypeScript::class)) {
+                $classes[] = $class;
             }
         }
 
@@ -131,7 +121,7 @@ class Generator
         $namespaces = [];
 
         foreach ($records as $r) {
-            $parts = explode('\\', $r->name);
+            $parts = array_filter(explode('\\', $r->name));
 
             $ptr = &$namespaces;
             foreach ($parts as $p) {
@@ -177,7 +167,7 @@ class Generator
                 $parts[] = $this->mapType($t, $prop, $queue);
             }
 
-            return TsUnion::from($parts);
+            return new TsUnion($parts);
         }
 
         if ($type instanceof ReflectionIntersectionType) {
@@ -186,7 +176,7 @@ class Generator
                 $parts[] = $this->mapType($t, $prop, $queue);
             }
 
-            return TsIntersection::from($parts);
+            return new TsIntersection($parts);
         }
 
         assert($type instanceof ReflectionNamedType);
@@ -199,14 +189,13 @@ class Generator
 
         if ($type->isBuiltin()) {
             if ($name === 'array') {
-                return TsArray::from($prop);
+                return TsArray::from($prop, $queue);
             }
 
             $ts = TsScalar::from($name);
 
-            // Handle nullable NamedType (PHP 8.0’s ?T is “allowsNull”)
-            if ($type->allowsNull() && $name !== 'null') {
-                return TsUnion::from([$ts, TsScalar::null]);
+            if ($type->allowsNull() && $name !== 'null' && $name !== 'mixed') {
+                return new TsUnion([$ts, TsScalar::null]);
             }
 
             return $ts;
@@ -222,16 +211,17 @@ class Generator
             }
         }
 
-        // enqueue referenced class if not seen yet
-        if (is_string($name) && class_exists($name) && ! isset($this->visited[$name])) {
+        $userDefined = class_exists($name) && new ReflectionClass($name)->isUserDefined();
+
+        if ($userDefined) {
             $queue->enqueue($name);
         }
 
-        $ref = new TsReference($name);
+        $ref = $userDefined ? new TsReference($name) : TsScalar::unknown;
 
         // nullable class type
         if ($type->allowsNull()) {
-            return TsUnion::from([$ref, TsScalar::null]);
+            return new TsUnion([$ref, TsScalar::null]);
         }
 
         return $ref;

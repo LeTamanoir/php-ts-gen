@@ -14,7 +14,7 @@ class Utils
         if (preg_match('/^[A-Za-z_$][A-Za-z0-9_$]*$/', $raw)) {
             return $raw;
         }
-        // Quote and escape inner quotes/backslashes
+        // quote and escape inner quotes/backslashes
         $escaped = addcslashes($raw, '\\"');
 
         return "\"{$escaped}\"";
@@ -26,12 +26,6 @@ class Utils
      */
     public static function tsIdent(string $raw): string
     {
-        // Replace invalid chars with underscores; prefix if it starts with a digit.
-        $id = preg_replace('/[^A-Za-z0-9_$]/', '_', $raw) ?? '_';
-        if (preg_match('/^[0-9]/', $id)) {
-            $id = '_'.$id;
-        }
-
-        return $id;
+        return preg_replace('/[^A-Za-z0-9_$]/', '_', $raw) ?? '_';
     }
 }

@@ -14,6 +14,6 @@ final class TsReference implements TsType
 
     public function render(RenderCtx $ctx): string
     {
-        return implode('.', array_map(Utils::tsIdent(...), explode('\\', $this->className)));
+        return implode('.', array_map(Utils::tsIdent(...), array_filter(explode('\\', $this->className))));
     }
 }
