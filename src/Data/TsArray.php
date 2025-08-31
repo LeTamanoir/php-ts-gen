@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Typographos\Data;
 
 use InvalidArgumentException;
-use Typographos\Queue;
 use ReflectionClass;
 use ReflectionProperty;
+use Typographos\Queue;
 
 final class TsArray implements TsType
 {

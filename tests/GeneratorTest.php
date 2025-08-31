@@ -1,5 +1,7 @@
 <?php
 
+use Typographos\Config;
+use Typographos\Generator;
 use Typographos\Tests\Fixtures\Arrays;
 use Typographos\Tests\Fixtures\Child;
 use Typographos\Tests\Fixtures\Intersections;
@@ -14,8 +16,6 @@ use Typographos\Tests\Fixtures\InvalidArrayVarDocBlock;
 use Typographos\Tests\Fixtures\Nullable;
 use Typographos\Tests\Fixtures\Scalars;
 use Typographos\Tests\Fixtures\Unions;
-use Typographos\Config;
-use Typographos\Generator;
 
 afterEach(function () {
     if (file_exists('tests/test.d.ts')) {
