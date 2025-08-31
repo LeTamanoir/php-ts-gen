@@ -1,11 +1,10 @@
 {
-    "name": "letamanoir/php-ts-gen",
-    "description": "Generate TypeScript types from your PHP Data Transfer Objects (DTOs)",
+    "name": "letamanoir/typographos",
+    "description": "Generate TS types from your PHP classes",
     "keywords": [
-        "PhpTs",
-        "php-ts-gen"
+        "Typographos"
     ],
-    "homepage": "https://github.com/LeTamanoir/php-ts-gen",
+    "homepage": "https://github.com/LeTamanoir/Typographos",
     "license": "MIT",
     "authors": [
         {
@@ -24,12 +23,12 @@
     },
     "autoload": {
         "psr-4": {
-            "PhpTs\\": "src"
+            "Typographos\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "PhpTs\\Tests\\": "tests"
+            "Typographos\\Tests\\": "tests"
         }
     },
     "scripts": {
