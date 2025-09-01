@@ -1,7 +1,7 @@
 <?php
 
+use Typographos\Codegen;
 use Typographos\Config;
-use Typographos\Generator;
 use Typographos\Tests\Fixtures\Arrays;
 use Typographos\Tests\Fixtures\Child;
 use Typographos\Tests\Fixtures\Intersections;
@@ -29,7 +29,7 @@ $config = new Config()
 
 it('can generate scalars', function () use ($config) {
 
-    new Generator($config)
+    new Codegen($config)
         ->generate(
             Scalars::class,
         );
@@ -40,7 +40,7 @@ it('can generate scalars', function () use ($config) {
 
 it('can generate unions', function () use ($config) {
 
-    new Generator($config)
+    new Codegen($config)
         ->generate(
             Unions::class,
         );
@@ -49,20 +49,16 @@ it('can generate unions', function () use ($config) {
 
 });
 
-it('can generate intersections', function () use ($config) {
+it('can\'t generate intersections', function () use ($config) {
 
-    new Generator($config)
-        ->generate(
-            Intersections::class,
-        );
-
-    expect(file_get_contents('tests/test.d.ts'))->toBe(file_get_contents('tests/Expected/intersections.d.ts'));
+    expect(fn () => new Codegen($config)->generate(Intersections::class))
+        ->toThrow(InvalidArgumentException::class, 'Intersection types are not supported');
 
 });
 
 it('can generate arrays', function () use ($config) {
 
-    new Generator($config)
+    new Codegen($config)
         ->generate(
             Arrays::class,
         );
@@ -73,7 +69,7 @@ it('can generate arrays', function () use ($config) {
 
 it('can handle invalid arrays', function () use ($config) {
 
-    $gen = new Generator($config);
+    $gen = new Codegen($config);
 
     expect(fn () => $gen->generate(InvalidArrayVarDocBlock::class))
         ->toThrow(InvalidArgumentException::class, 'Malformed PHPDoc [/** @invalid-var-tag */] for property $invalidVarDocBlock in ');
@@ -102,7 +98,7 @@ it('can handle invalid arrays', function () use ($config) {
 
 it('can use generate nullable properties', function () use ($config) {
 
-    new Generator($config)
+    new Codegen($config)
         ->generate(
             Nullable::class,
         );
@@ -113,7 +109,7 @@ it('can use generate nullable properties', function () use ($config) {
 
 it('can handle specifi keywords', function () use ($config) {
 
-    new Generator($config)
+    new Codegen($config)
         ->generate(
             Child::class,
         );
@@ -124,7 +120,7 @@ it('can handle specifi keywords', function () use ($config) {
 
 it('can use type replacer', function () use ($config) {
 
-    new Generator((clone $config)->withTypeReplacement(
+    new Codegen((clone $config)->withTypeReplacement(
         'int', 'custom_raw_typescript_type'
     ))
         ->generate(
@@ -137,7 +133,7 @@ it('can use type replacer', function () use ($config) {
 
 it('can use custom indent', function () use ($config) {
 
-    new Generator((clone $config)->withIndent(
+    new Codegen((clone $config)->withIndent(
         ' - '
     ))
         ->generate(
@@ -150,7 +146,7 @@ it('can use custom indent', function () use ($config) {
 
 it('can generate to a custom path', function () use ($config) {
 
-    new Generator((clone $config)->withFilePath(
+    new Codegen((clone $config)->withFilePath(
         'tests/custom-path.d.ts'
     ))
         ->generate(
@@ -165,7 +161,7 @@ it('can generate to a custom path', function () use ($config) {
 
 it('can use auto-discovery', function () use ($config) {
 
-    new Generator((clone $config)->withAutoDiscoverDirectory(__DIR__.'/Fixtures'))
+    new Codegen((clone $config)->withAutoDiscoverDirectory(__DIR__.'/Fixtures'))
         ->generate();
 
     expect(file_get_contents('tests/test.d.ts'))->toBe(file_get_contents('tests/Expected/attributes.d.ts'));
@@ -174,14 +170,14 @@ it('can use auto-discovery', function () use ($config) {
 
 it('can\'t discover broken dir', function () use ($config) {
 
-    expect(fn () => new Generator((clone $config)->withAutoDiscoverDirectory(__DIR__.'/unknown'))->generate())
+    expect(fn () => new Codegen((clone $config)->withAutoDiscoverDirectory(__DIR__.'/unknown'))->generate())
         ->toThrow(RuntimeException::class, 'Auto discover directory not found: '.__DIR__.'/unknown');
 
 });
 
 it('can\'t generate nothing', function () use ($config) {
 
-    expect(fn () => new Generator($config)->generate())
+    expect(fn () => new Codegen($config)->generate())
         ->toThrow(InvalidArgumentException::class, 'No classes to generate');
 
 });
@@ -192,7 +188,7 @@ it('can\'t write to broken destination', function () use ($config) {
 
     chmod('tests/broken-file.d.ts', 0);
 
-    expect(fn () => new Generator((clone $config)->withFilePath('tests/broken-file.d.ts'))->generate(Scalars::class))
+    expect(fn () => new Codegen((clone $config)->withFilePath('tests/broken-file.d.ts'))->generate(Scalars::class))
         ->toThrow(RuntimeException::class, 'Failed to write generated types to file tests/broken-file.d.ts');
 
     unlink('tests/broken-file.d.ts');

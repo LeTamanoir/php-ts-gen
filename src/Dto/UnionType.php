@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
-final class TsUnion implements TsType
+use Typographos\Interfaces\TypeScriptType;
+
+final class UnionType implements TypeScriptType
 {
     /**
-     * @param  TsType[]  $types
+     * @param  TypeScriptType[]  $types
      */
     public function __construct(public array $types) {}
 

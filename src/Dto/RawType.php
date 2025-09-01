@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
-final class TsRaw implements TsType
+use Typographos\Interfaces\TypeScriptType;
+
+final class RawType implements TypeScriptType
 {
     public function __construct(public string $rawExpr) {}
 

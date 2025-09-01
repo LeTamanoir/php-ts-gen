@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
 use InvalidArgumentException;
+use Typographos\Interfaces\TypeScriptType;
 
-enum TsScalar implements TsType
+enum ScalarType implements TypeScriptType
 {
     case boolean;
     case number;
@@ -28,14 +29,14 @@ enum TsScalar implements TsType
     public static function from(string $phpScalar): self
     {
         return match ($phpScalar) {
-            'int', 'float' => TsScalar::number,
-            'string' => TsScalar::string,
-            'bool' => TsScalar::boolean,
-            'object' => TsScalar::object,
-            'mixed' => TsScalar::any,
-            'null' => TsScalar::null,
-            'true' => TsScalar::true,
-            'false' => TsScalar::false,
+            'int', 'float' => self::number,
+            'string' => self::string,
+            'bool' => self::boolean,
+            'object' => self::object,
+            'mixed' => self::any,
+            'null' => self::null,
+            'true' => self::true,
+            'false' => self::false,
             default => throw new InvalidArgumentException('Unsupported scalar type '.$phpScalar),
         };
     }

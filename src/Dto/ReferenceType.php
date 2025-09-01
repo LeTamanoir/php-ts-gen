@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
+use Typographos\Interfaces\TypeScriptType;
 use Typographos\Utils;
 
-final class TsReference implements TsType
+final class ReferenceType implements TypeScriptType
 {
     public function __construct(
         public string $className,

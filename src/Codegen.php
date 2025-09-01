@@ -17,17 +17,16 @@ use ReflectionUnionType;
 use RuntimeException;
 use SplFileInfo;
 use Typographos\Attributes\TypeScript;
-use Typographos\Data\RenderCtx;
-use Typographos\Data\TsArray;
-use Typographos\Data\TsIntersection;
-use Typographos\Data\TsRaw;
-use Typographos\Data\TsRecord;
-use Typographos\Data\TsReference;
-use Typographos\Data\TsScalar;
-use Typographos\Data\TsType;
-use Typographos\Data\TsUnion;
+use Typographos\Dto\ArrayType;
+use Typographos\Dto\RawType;
+use Typographos\Dto\RecordType;
+use Typographos\Dto\ReferenceType;
+use Typographos\Dto\RenderCtx;
+use Typographos\Dto\ScalarType;
+use Typographos\Dto\UnionType;
+use Typographos\Interfaces\TypeScriptType;
 
-class Generator
+class Codegen
 {
     public function __construct(private Config $config) {}
 
@@ -104,7 +103,7 @@ class Generator
         foreach ($tree as $segment => $node) {
             $idt = str_repeat($ctx->indent, $ctx->depth);
 
-            if ($node instanceof TsRecord) {
+            if ($node instanceof RecordType) {
                 $ts .= $idt.'export interface '.$segment." {\n".$node->render($ctx->increaseDepth()).$idt."}\n";
 
                 continue;
@@ -118,7 +117,7 @@ class Generator
         return $ts;
     }
 
-    private function groupByNamespace(TsRecord ...$records)
+    private function groupByNamespace(RecordType ...$records)
     {
         $namespaces = [];
 
@@ -141,7 +140,7 @@ class Generator
     {
         $ref = new ReflectionClass($className);
 
-        $ts = new TsRecord($className);
+        $ts = new RecordType($className);
 
         foreach ($ref->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
             $type = $prop->getType();
@@ -149,7 +148,7 @@ class Generator
             $propName = $prop->getName();
 
             if ($type === null) {
-                $ts->addProperty($propName, TsScalar::unknown);
+                $ts->addProperty($propName, ScalarType::unknown);
 
                 continue;
             }
@@ -161,7 +160,7 @@ class Generator
         return $ts;
     }
 
-    private function mapType(ReflectionType $type, ReflectionProperty $prop, Queue $queue): TsType
+    private function mapType(ReflectionType $type, ReflectionProperty $prop, Queue $queue): TypeScriptType
     {
         if ($type instanceof ReflectionUnionType) {
             $parts = [];
@@ -169,16 +168,11 @@ class Generator
                 $parts[] = $this->mapType($t, $prop, $queue);
             }
 
-            return new TsUnion($parts);
+            return new UnionType($parts);
         }
 
         if ($type instanceof ReflectionIntersectionType) {
-            $parts = [];
-            foreach ($type->getTypes() as $t) {
-                $parts[] = $this->mapType($t, $prop, $queue);
-            }
-
-            return new TsIntersection($parts);
+            throw new InvalidArgumentException('Intersection types are not supported');
         }
 
         assert($type instanceof ReflectionNamedType);
@@ -186,18 +180,18 @@ class Generator
         $name = $type->getName();
 
         if (isset($this->config->typeReplacements[$name])) {
-            return new TsRaw($this->config->typeReplacements[$name]);
+            return new RawType($this->config->typeReplacements[$name]);
         }
 
         if ($type->isBuiltin()) {
             if ($name === 'array') {
-                return TsArray::from($prop, $queue);
+                return ArrayType::from($prop, $queue);
             }
 
-            $ts = TsScalar::from($name);
+            $ts = ScalarType::from($name);
 
             if ($type->allowsNull() && $name !== 'null' && $name !== 'mixed') {
-                return new TsUnion([$ts, TsScalar::null]);
+                return new UnionType([$ts, ScalarType::null]);
             }
 
             return $ts;
@@ -219,11 +213,11 @@ class Generator
             $queue->enqueue($name);
         }
 
-        $ref = $userDefined ? new TsReference($name) : TsScalar::unknown;
+        $ref = $userDefined ? new ReferenceType($name) : ScalarType::unknown;
 
         // nullable class type
         if ($type->allowsNull()) {
-            return new TsUnion([$ref, TsScalar::null]);
+            return new UnionType([$ref, ScalarType::null]);
         }
 
         return $ref;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
 enum ArrayKeyType
 {

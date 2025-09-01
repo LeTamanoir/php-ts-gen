@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Typographos\Data;
+namespace Typographos\Dto;
 
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionProperty;
+use Typographos\Interfaces\TypeScriptType;
 use Typographos\Queue;
 
-final class TsArray implements TsType
+final class ArrayType implements TypeScriptType
 {
     private function __construct(
         private string $raw
@@ -45,7 +46,7 @@ final class TsArray implements TsType
         }
     }
 
-    private static function parseArrayType(string $type, Queue $queue, int $depth = 0): TsType
+    private static function parseArrayType(string $type, Queue $queue, int $depth = 0): TypeScriptType
     {
         // list<T>
         if (preg_match('/^list<(.+)>$/i', $type, $m)) {
@@ -97,7 +98,7 @@ final class TsArray implements TsType
             $queue->enqueue($type);
         }
 
-        return $userDefined ? new TsReference($type) : TsScalar::from($type);
+        return $userDefined ? new ReferenceType($type) : ScalarType::from($type);
     }
 
     /**
@@ -179,21 +180,21 @@ final class TsArray implements TsType
         // }
     }
 
-    protected static function asArray(TsType $ts): self
+    protected static function asArray(TypeScriptType $ts): self
     {
         $rendered = $ts->render(RenderCtx::root());
 
         return new self($rendered.'[]');
     }
 
-    protected static function asNonEmptyArray(TsType $ts): self
+    protected static function asNonEmptyArray(TypeScriptType $ts): self
     {
         $rendered = $ts->render(RenderCtx::root());
 
         return new self('['.$rendered.', ...'.$rendered.'[]]');
     }
 
-    protected static function asIndexString(TsType $ts): self
+    protected static function asIndexString(TypeScriptType $ts): self
     {
         $rendered = $ts->render(RenderCtx::root());
 

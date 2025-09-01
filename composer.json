@@ -1,6 +1,7 @@
 {
     "name": "letamanoir/typographos",
     "description": "Generate TS types from your PHP classes",
+    "version": "0.0.1",
     "keywords": [
         "Typographos"
     ],
