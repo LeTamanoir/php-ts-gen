@@ -1,6 +1,6 @@
 declare namespace Typographos {
-    namespace Tests {
-        namespace Fixtures {
+    export namespace Tests {
+        export namespace Fixtures {
             export interface Scalars {
                 string: string
                 int: custom_raw_typescript_type

@@ -1,6 +1,6 @@
 declare namespace Typographos {
-    namespace Tests {
-        namespace Fixtures {
+    export namespace Tests {
+        export namespace Fixtures {
             export interface Attributes {
                 sample: string
             }
