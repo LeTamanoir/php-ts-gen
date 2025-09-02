@@ -50,7 +50,7 @@ new Generator(
 `generated.d.ts`:
 ```ts
 declare namespace App {
-    namespace DTO {
+    export namespace DTO {
         export interface User {
             name: string
             age: number
