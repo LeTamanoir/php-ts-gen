@@ -13,12 +13,19 @@ use Typographos\Queue;
 final class ArrayType implements TypeScriptType
 {
     private function __construct(
-        private string $raw
+        private ArrayKind $kind,
+        private TypeScriptType $inner
     ) {}
 
     public function render(RenderCtx $ctx): string
     {
-        return $this->raw;
+        $inner = $this->inner->render($ctx);
+
+        return match ($this->kind) {
+            ArrayKind::List => $inner.'[]',
+            ArrayKind::NonEmptyList => '['.$inner.', ...'.$inner.'[]]',
+            ArrayKind::IndexString => '{ [key: string]: '.$inner.' }',
+        };
     }
 
     public static function from(ReflectionProperty $prop, Queue $queue): self
@@ -56,7 +63,7 @@ final class ArrayType implements TypeScriptType
             }
             $valTs = self::parseArrayType($t[0], $queue, $depth + 1);
 
-            return self::asArray($valTs);
+            return new self(ArrayKind::List, $valTs);
         }
 
         // non-empty-list<T>
@@ -67,7 +74,7 @@ final class ArrayType implements TypeScriptType
             }
             $valTs = self::parseArrayType($t[0], $queue, $depth + 1);
 
-            return self::asNonEmptyArray($valTs);
+            return new self(ArrayKind::NonEmptyList, $valTs);
         }
 
         // array<K,V>
@@ -82,9 +89,9 @@ final class ArrayType implements TypeScriptType
             $valTs = self::parseArrayType($vRaw, $queue, $depth + 1);
 
             return match ($keyKind) {
-                ArrayKeyType::int => self::asArray($valTs),
-                ArrayKeyType::string => self::asIndexString($valTs),
-                ArrayKeyType::both => self::asIndexString($valTs),
+                ArrayKeyType::Int => new self(ArrayKind::List, $valTs),
+                ArrayKeyType::String => new self(ArrayKind::IndexString, $valTs),
+                ArrayKeyType::Both => new self(ArrayKind::IndexString, $valTs),
             };
         }
 
@@ -114,15 +121,23 @@ final class ArrayType implements TypeScriptType
             if ($ch === '<') {
                 $depth++;
                 $buf .= $ch;
-            } elseif ($ch === '>') {
+
+                continue;
+            }
+            if ($ch === '>') {
                 $depth = max(0, $depth - 1);
                 $buf .= $ch;
-            } elseif ($ch === ',' && $depth === 0) {
+
+                continue;
+
+            } if ($ch === ',' && $depth === 0) {
                 $parts[] = trim($buf);
                 $buf = '';
-            } else {
-                $buf .= $ch;
+
+                continue;
             }
+
+            $buf .= $ch;
         }
 
         if ($buf !== '') {
@@ -159,45 +174,20 @@ final class ArrayType implements TypeScriptType
                     break;
 
                 case 'array-key':
-                    $hasInt = true;
-                    $hasStr = true;
-                    break;
+                    return ArrayKeyType::Both;
 
                 default:
                     throw new InvalidArgumentException('Unsupported array key type ['.$k.']');
             }
         }
 
-        if ($hasInt && $hasStr) {
-            return ArrayKeyType::both;
+        if ($hasStr && $hasInt) {
+            return ArrayKeyType::Both;
         }
-        if ($hasInt) {
-            return ArrayKeyType::int;
+        if ($hasStr) {
+            return ArrayKeyType::String;
         }
 
-        // if ($hasStr) {
-        return ArrayKeyType::string;
-        // }
-    }
-
-    protected static function asArray(TypeScriptType $ts): self
-    {
-        $rendered = $ts->render(RenderCtx::root());
-
-        return new self($rendered.'[]');
-    }
-
-    protected static function asNonEmptyArray(TypeScriptType $ts): self
-    {
-        $rendered = $ts->render(RenderCtx::root());
-
-        return new self('['.$rendered.', ...'.$rendered.'[]]');
-    }
-
-    protected static function asIndexString(TypeScriptType $ts): self
-    {
-        $rendered = $ts->render(RenderCtx::root());
-
-        return new self('{ [key: string]: '.$rendered.' }');
+        return ArrayKeyType::Int;
     }
 }
