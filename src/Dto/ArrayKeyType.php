@@ -6,7 +6,7 @@ namespace Typographos\Dto;
 
 enum ArrayKeyType
 {
-    case int;
-    case string;
-    case both;
+    case Int;
+    case String;
+    case Both;
 }
