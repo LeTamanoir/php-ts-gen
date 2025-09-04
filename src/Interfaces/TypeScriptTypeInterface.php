@@ -6,7 +6,7 @@ namespace Typographos\Interfaces;
 
 use Typographos\Dto\RenderCtx;
 
-interface TypeScriptType
+interface TypeScriptTypeInterface
 {
     public function render(RenderCtx $ctx): string;
 }

@@ -5,37 +5,37 @@ declare(strict_types=1);
 namespace Typographos\Dto;
 
 use Override;
-use Typographos\Interfaces\TypeScriptType;
-use Typographos\Traits\HasProperties;
+use Typographos\Interfaces\TypeScriptTypeInterface;
+use Typographos\Traits\HasPropertiesTrait;
 use Typographos\Utils;
 
 /**
  * @api
  */
-final class RecordType implements TypeScriptType
+final class RecordType implements TypeScriptTypeInterface
 {
     /**
-     * @use HasProperties<TypeScriptType>
+     * @use HasPropertiesTrait<TypeScriptTypeInterface>
      */
-    use HasProperties;
+    use HasPropertiesTrait;
 
     public function __construct(
-        public string $name
+        public string $name,
     ) {}
 
     #[Override]
     public function render(RenderCtx $ctx): string
     {
-        $idt = str_repeat($ctx->indent, $ctx->depth);
-        $idtInner = $idt.$ctx->indent;
+        $baseIndent = str_repeat($ctx->indent, $ctx->depth);
+        $propertyIndent = $baseIndent . $ctx->indent;
 
-        $ts = $idt.'export interface '.$this->name." {\n";
+        $ts = $baseIndent . 'export interface ' . $this->name . " {\n";
 
         foreach ($this->properties as $name => $type) {
-            $ts .= $idtInner.Utils::tsProp($name).': '.$type->render($ctx)."\n";
+            $ts .= $propertyIndent . Utils::tsProp($name) . ': ' . $type->render($ctx) . "\n";
         }
 
-        $ts .= $idt."}\n";
+        $ts .= $baseIndent . "}\n";
 
         return $ts;
     }

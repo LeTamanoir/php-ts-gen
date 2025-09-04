@@ -9,19 +9,16 @@ namespace Typographos;
  */
 final class Config
 {
+    public string $indent = "\t";
+
     /**
-     * Create a new configuration with defaults.
-     *
-     * @api
-     *
-     * @param  array<string, string>  $typeReplacements
+     * @var array<string, string>
      */
-    public function __construct(
-        public string $indent = "\t",
-        public array $typeReplacements = [],
-        public ?string $autoDiscoverDirectory = null,
-        public string $filePath = 'test.d.ts',
-    ) {}
+    public array $typeReplacements = [];
+
+    public null|string $autoDiscoverDirectory = null;
+
+    public string $filePath = 'generated.d.ts';
 
     /**
      * Set a custom indent for the generated code.
@@ -64,7 +61,7 @@ final class Config
      *
      * @api
      */
-    public function withAutoDiscoverDirectory(?string $autoDiscoverDirectory): self
+    public function withAutoDiscoverDirectory(null|string $autoDiscoverDirectory): self
     {
         $this->autoDiscoverDirectory = $autoDiscoverDirectory;
 

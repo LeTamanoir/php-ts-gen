@@ -6,19 +6,19 @@ namespace Typographos\Dto;
 
 use InvalidArgumentException;
 use Override;
-use Typographos\Codegen;
-use Typographos\Interfaces\TypeScriptType;
+use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Queue;
+use Typographos\TypeConverter;
 use Typographos\Utils;
 
 /**
  * @api
  */
-final class ArrayType implements TypeScriptType
+final class ArrayType implements TypeScriptTypeInterface
 {
     private function __construct(
         private ArrayKind $kind,
-        private TypeScriptType $inner
+        private TypeScriptTypeInterface $inner,
     ) {}
 
     #[Override]
@@ -27,48 +27,101 @@ final class ArrayType implements TypeScriptType
         return $this->kind->render($this->inner->render($ctx));
     }
 
-    public static function from(Codegen $codegen, string $type, Queue $queue): self
+    /**
+     * Create ArrayType from PHPDoc array notation
+     *
+     * Supported formats:
+     * - list<T> → T[]
+     * - non-empty-list<T> → [T, ...T[]]
+     * - array<K,V> → V[] or { [key: string]: V }
+     *
+     * @param  array<string, string>  $typeReplacements
+     */
+    public static function from(array $typeReplacements, string $type, Queue $queue): self
     {
-        // list<T>
-        if (preg_match('/^list<(.+)>$/i', $type, $m)) {
-            $t = Utils::splitTopLevel(trim($m[1]), ',');
-            if (count($t) !== 1) {
-                throw new InvalidArgumentException('Expected exactly one type argument when evaluating ['.$type.']');
-            }
-            $valTs = $codegen->mapType($t[0], $queue);
-
-            return new self(ArrayKind::List, $valTs);
+        // Parse generic array notation
+        if (!preg_match('/^([a-z-]+)<(.+)>$/i', $type, $matches)) {
+            throw new InvalidArgumentException('Unsupported PHPDoc array type ' . trim($type));
         }
 
-        // non-empty-list<T>
-        if (preg_match('/^non-empty-list<(.+)>$/i', $type, $m)) {
-            $t = Utils::splitTopLevel(trim($m[1]), ',');
-            if (count($t) !== 1) {
-                throw new InvalidArgumentException('Expected exactly one type argument when evaluating ['.$type.']');
-            }
-            $valTs = $codegen->mapType($t[0], $queue);
+        [$_, $arrayTypeName, $typeArgs] = $matches;
 
-            return new self(ArrayKind::NonEmptyList, $valTs);
+        return match (strtolower($arrayTypeName)) {
+            'list' => self::createList($typeArgs, $queue, $typeReplacements, $type),
+            'non-empty-list' => self::createNonEmptyList($typeArgs, $queue, $typeReplacements, $type),
+            'array' => self::createArray($typeArgs, $queue, $typeReplacements, $type),
+            default => throw new InvalidArgumentException('Unsupported PHPDoc array type ' . trim($type)),
+        };
+    }
+
+    /**
+     * Create list<T> array type
+     *
+     * @param  array<string, string>  $typeReplacements
+     */
+    private static function createList(
+        string $typeArgs,
+        Queue $queue,
+        array $typeReplacements,
+        string $originalType,
+    ): self {
+        $types = Utils::splitTopLevel(trim($typeArgs), ',');
+        if (count($types) !== 1) {
+            throw new InvalidArgumentException("Expected exactly one type argument when evaluating [{$originalType}]");
         }
 
-        // array<K,V>
-        if (preg_match('/^array<(.+)>$/i', $type, $m)) {
-            $kv = Utils::splitTopLevel(trim($m[1]), ',');
-            if (count($kv) !== 2) {
-                throw new InvalidArgumentException('Expected array<K,V> to have exactly two type args when evaluating ['.$type.']');
-            }
-            [$kRaw, $vRaw] = [trim($kv[0]), trim($kv[1])];
+        $valueType = TypeConverter::convertToTypeScript(trim($types[0]), $queue, $typeReplacements);
 
-            $keyKind = ArrayKeyType::from($kRaw);
-            $valTs = $codegen->mapType($vRaw, $queue);
+        return new self(ArrayKind::List, $valueType);
+    }
 
-            return match ($keyKind) {
-                ArrayKeyType::Int => new self(ArrayKind::List, $valTs),
-                ArrayKeyType::String => new self(ArrayKind::IndexString, $valTs),
-                ArrayKeyType::Both => new self(ArrayKind::IndexString, $valTs),
-            };
+    /**
+     * Create non-empty-list<T> array type
+     *
+     * @param  array<string, string>  $typeReplacements
+     */
+    private static function createNonEmptyList(
+        string $typeArgs,
+        Queue $queue,
+        array $typeReplacements,
+        string $originalType,
+    ): self {
+        $types = Utils::splitTopLevel(trim($typeArgs), ',');
+        if (count($types) !== 1) {
+            throw new InvalidArgumentException("Expected exactly one type argument when evaluating [{$originalType}]");
         }
 
-        throw new InvalidArgumentException('Unsupported PHPDoc array type '.trim($type));
+        $valueType = TypeConverter::convertToTypeScript(trim($types[0]), $queue, $typeReplacements);
+
+        return new self(ArrayKind::NonEmptyList, $valueType);
+    }
+
+    /**
+     * Create array<K,V> type with key-value pairs
+     *
+     * @param  array<string, string>  $typeReplacements
+     */
+    private static function createArray(
+        string $typeArgs,
+        Queue $queue,
+        array $typeReplacements,
+        string $originalType,
+    ): self {
+        $types = Utils::splitTopLevel(trim($typeArgs), ',');
+        if (count($types) !== 2) {
+            throw new InvalidArgumentException(
+                "Expected array<K,V> to have exactly two type args when evaluating [{$originalType}]",
+            );
+        }
+
+        [$keyRaw, $valueRaw] = [trim($types[0]), trim($types[1])];
+        $keyKind = ArrayKeyType::from($keyRaw);
+        $valueType = TypeConverter::convertToTypeScript($valueRaw, $queue, $typeReplacements);
+
+        return match ($keyKind) {
+            ArrayKeyType::Int => new self(ArrayKind::List, $valueType),
+            ArrayKeyType::String => new self(ArrayKind::IndexString, $valueType),
+            ArrayKeyType::Both => new self(ArrayKind::IndexString, $valueType),
+        };
     }
 }

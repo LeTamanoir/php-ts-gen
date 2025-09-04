@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Typographos\Dto;
 
 use Override;
-use Typographos\Interfaces\TypeScriptType;
+use Typographos\Interfaces\TypeScriptTypeInterface;
 
 /**
  * @api
  */
-final class RawType implements TypeScriptType
+final class RawType implements TypeScriptTypeInterface
 {
     public function __construct(
-        public string $rawExpr
+        public string $rawExpr,
     ) {}
 
     #[Override]

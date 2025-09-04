@@ -6,9 +6,9 @@ namespace Typographos\Dto;
 
 use InvalidArgumentException;
 use Override;
-use Typographos\Interfaces\TypeScriptType;
+use Typographos\Interfaces\TypeScriptTypeInterface;
 
-enum ScalarType implements TypeScriptType
+enum ScalarType implements TypeScriptTypeInterface
 {
     case boolean;
     case number;
@@ -33,7 +33,7 @@ enum ScalarType implements TypeScriptType
             'null' => self::null,
             'true' => self::true,
             'false' => self::false,
-            default => throw new InvalidArgumentException('Unsupported scalar type '.$phpScalar),
+            default => throw new InvalidArgumentException('Unsupported scalar type ' . $phpScalar),
         };
     }
 

@@ -10,7 +10,7 @@ namespace Typographos;
 final class Queue
 {
     /**
-     * @var class-string[]
+     * @var array<class-string>
      */
     private array $queue;
 
@@ -20,7 +20,7 @@ final class Queue
     private array $visited;
 
     /**
-     * @param  class-string[]  $classNames
+     * @param  array<class-string>  $classNames
      */
     public function __construct(array $classNames)
     {
@@ -40,10 +40,13 @@ final class Queue
         $this->queue[] = $className;
     }
 
-    public function shift(): ?string
+    /**
+     * @return class-string|null
+     */
+    public function shift(): null|string
     {
         $className = array_shift($this->queue);
-        if ($className) {
+        if ($className !== null) {
             $this->visited[$className] = true;
         }
 

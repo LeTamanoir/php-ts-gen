@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * @template T
  */
-trait HasProperties
+trait HasPropertiesTrait
 {
     /**
      * @var array<string, T>
@@ -19,10 +19,14 @@ trait HasProperties
     /**
      * @param  T  $property
      */
-    public function addProperty(string $propertyKey, $property): self
+    public function addProperty(string $propertyKey, mixed $property): self
     {
+        if ($propertyKey === '') {
+            throw new InvalidArgumentException('Property key cannot be empty');
+        }
+
         if (isset($this->properties[$propertyKey])) {
-            throw new InvalidArgumentException('Property '.$propertyKey.' already exists');
+            throw new InvalidArgumentException('Property ' . $propertyKey . ' already exists');
         }
 
         $this->properties[$propertyKey] = $property;

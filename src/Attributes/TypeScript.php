@@ -12,4 +12,6 @@ use Attribute;
  * @api
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-final class TypeScript {}
+final class TypeScript
+{
+}

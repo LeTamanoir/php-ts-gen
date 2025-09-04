@@ -17,6 +17,12 @@ enum ArrayKeyType
     case String;
     case Both;
 
+    /**
+     * Create ArrayKeyType from PHPDoc type string
+     *
+     * Supports union types like 'int|string' and specialized types
+     * like 'positive-int', 'non-empty-string', etc.
+     */
     public static function from(string $type): self
     {
         $keys = array_map(trim(...), explode('|', trim($type)));
@@ -24,40 +30,40 @@ enum ArrayKeyType
         $hasInt = false;
         $hasStr = false;
 
-        foreach ($keys as $k) {
-            switch (strtolower($k)) {
-                case 'int':
-                case 'positive-int':
-                case 'negative-int':
-                case 'int-mask':
-                case 'int-mask-of':
-                    $hasInt = true;
-                    break;
+        foreach ($keys as $key) {
+            $keyType = self::classifyKeyType($key);
 
-                case 'string':
-                case 'non-empty-string':
-                case 'lowercase-string':
-                case 'uppercase-string':
-                case 'class-string':
-                case 'literal-string':
-                    $hasStr = true;
-                    break;
-
-                case 'array-key':
-                    return self::Both;
-
-                default:
-                    throw new InvalidArgumentException('Unsupported array key type ['.$k.']');
+            if ($keyType === self::Both) {
+                return self::Both;
             }
+
+            $hasInt = $hasInt || $keyType === self::Int;
+            $hasStr = $hasStr || $keyType === self::String;
         }
 
-        if ($hasStr && $hasInt) {
-            return self::Both;
-        }
-        if ($hasStr) {
-            return self::String;
-        }
+        return match (true) {
+            $hasStr && $hasInt => self::Both,
+            $hasStr => self::String,
+            default => self::Int,
+        };
+    }
 
-        return self::Int;
+    /**
+     * Classify a single key type string into Int, String, or Both
+     */
+    private static function classifyKeyType(string $keyType): self
+    {
+        return match (strtolower($keyType)) {
+            'int', 'positive-int', 'negative-int', 'int-mask', 'int-mask-of' => self::Int,
+            'string',
+            'non-empty-string',
+            'lowercase-string',
+            'uppercase-string',
+            'class-string',
+            'literal-string',
+                => self::String,
+            'array-key' => self::Both,
+            default => throw new InvalidArgumentException("Unsupported array key type [{$keyType}]"),
+        };
     }
 }

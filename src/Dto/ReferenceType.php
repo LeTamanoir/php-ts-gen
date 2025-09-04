@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Typographos\Dto;
 
 use Override;
-use Typographos\Interfaces\TypeScriptType;
+use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Utils;
 
 /**
@@ -13,7 +13,7 @@ use Typographos\Utils;
  *
  * @api
  */
-final class ReferenceType implements TypeScriptType
+final class ReferenceType implements TypeScriptTypeInterface
 {
     public function __construct(
         public string $fqcn,

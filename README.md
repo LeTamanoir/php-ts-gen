@@ -42,15 +42,13 @@ class User
 
 `codegen.php`:
 ```php
-use Typographos\Codegen;
-use Typographos\Config;
+use Typographos\Generator;
 
-new Codegen(
-    new Config()
-        ->withIndent("\t")
-        ->withAutoDiscoverDirectory(__DIR__.'/app/DTO')
-        ->withFilePath('generated.d.ts')
-)->generate();
+Generator::create()
+    ->discoverFrom(__DIR__.'/app/DTO')
+    ->outputTo('generated.d.ts')
+    ->withIndent("\t")
+    ->generate();
 ```
 
 `generated.d.ts`:
@@ -67,6 +65,7 @@ declare namespace App {
 
 ### Features
 
+- **Modular architecture**: Clean separation of concerns with `ClassDiscovery`, `PhpTypeResolver`, `TypeConverter`, and `FileWriter` components.
 - **Attribute-driven discovery**: mark classes with `#[Typographos\Attributes\TypeScript]` and auto-discover them from a directory.
 - **Union types**: supports PHP unions like `string|int` and nullable like `?Foo` → `Foo | null`.
 - **Array PHPDoc support**: parse common PHPDoc array shapes for `array`-typed properties:
@@ -79,16 +78,36 @@ declare namespace App {
 ### Configuration
 
 ```php
-new Config()
-    ->withIndent("\t")                  // default: "\t"
-    ->withFilePath('types.d.ts')          // default: 'test.d.ts'
-    ->withAutoDiscoverDirectory('src')    // recursively require_once and scan for #[TypeScript]
-    ->withTypeReplacement(DateTime::class, 'string');
+use Typographos\Generator;
+
+// Simple usage
+Generator::create()
+    ->discoverFrom('src')                           // recursively scan for #[TypeScript]
+    ->outputTo('types.d.ts')                        // output file path
+    ->generate();
+
+// Advanced configuration
+Generator::create()
+    ->discoverFrom(__DIR__.'/app/DTO')
+    ->outputTo('resources/js/types.d.ts')
+    ->withIndent('    ')                            // default: "\t"
+    ->withTypeReplacement(DateTime::class, 'string')
+    ->generate();
+
+// Alternative: specify output path directly in generate()
+Generator::create()
+    ->discoverFrom('src')
+    ->withIndent("\t")
+    ->generate('types.d.ts');
 ```
 
-- Pass explicit classes to `->generate(...$fqcn)` to skip discovery or to force inclusion.
-- Only public properties are emitted.
-- For `array`-typed properties, a PHPDoc `@var` or a constructor `@param` entry is required; otherwise an error is thrown.
+#### Usage Notes
+
+- **Auto-discovery**: Use `->discoverFrom('path')` to recursively scan for classes with `#[TypeScript]` attribute
+- **Explicit classes**: Pass class names to `->generate(['App\\DTO\\User', 'App\\DTO\\Post'])` to skip discovery
+- **Output flexibility**: Use `->outputTo('file.d.ts')` or `->generate('file.d.ts')`
+- **Property filtering**: Only public properties are emitted
+- **Array types**: Requires PHPDoc `@var` or constructor `@param` for `array`-typed properties
 
 ### Example: arrays via PHPDoc
 
@@ -102,6 +121,18 @@ public array $scoresByUser;
 /** @var non-empty-list<list<string>> */
 public array $matrix;
 ```
+
+### Architecture
+
+The refactored architecture provides clean separation of concerns:
+
+- **`Generator`**: Main orchestrator that coordinates the generation process
+- **`ClassDiscovery`**: Finds classes with TypeScript attributes from directories or explicit lists  
+- **`TypeResolver`**: Resolves PHP types, handling special cases like `array`, `self`, `parent`, and unions
+- **`TypeConverter`**: Converts resolved PHP types to TypeScript type objects
+- **`FileWriter`**: Handles writing generated TypeScript to files
+
+This provides optimal performance through static utility classes while maintaining an intuitive fluent API.
 
 ### Limitations and notes
 

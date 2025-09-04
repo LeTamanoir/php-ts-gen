@@ -5,35 +5,41 @@ declare(strict_types=1);
 namespace Typographos\Dto;
 
 use Override;
-use Typographos\Interfaces\TypeScriptType;
-use Typographos\Traits\HasChildren;
+use Typographos\Interfaces\TypeScriptTypeInterface;
+use Typographos\Traits\HasChildrenTrait;
 use Typographos\Utils;
 
 /**
  * @api
  */
-final class RootNamespaceType implements TypeScriptType
+final class RootNamespaceType implements TypeScriptTypeInterface
 {
-    /** @use HasChildren<RecordType|NamespaceType> */
-    use HasChildren;
+    /** @use HasChildrenTrait<RecordType|NamespaceType> */
+    use HasChildrenTrait;
 
     public function addRecord(string $namespace, RecordType $record): void
     {
-        $this->findNamespace($namespace)->addChild('RecordType::'.$record->name, $record);
+        $this->findNamespace($namespace)->addChild('RecordType::' . $record->name, $record);
     }
 
     private function findNamespace(string $namespace): RootNamespaceType|NamespaceType
     {
         $parts = Utils::fqcnParts($namespace);
 
-        /** @var RootNamespaceType|NamespaceType */
+        /** @var RootNamespaceType|NamespaceType $node */
         $node = $this;
         foreach ($parts as $part) {
-            $nsKey = 'NamespaceType::'.$part;
-            if (! $node->getChild($nsKey)) {
-                $node->addChild($nsKey, new NamespaceType($part));
+            $nsKey = 'NamespaceType::' . $part;
+
+            /** @var NamespaceType|null $existingChild */
+            $existingChild = $node->getChild($nsKey);
+            if ($existingChild === null) {
+                $newNamespace = new NamespaceType($part);
+                $node->addChild($nsKey, $newNamespace);
+                $node = $newNamespace;
+                continue;
             }
-            $node = $node->getChild($nsKey);
+            $node = $existingChild;
         }
 
         return $node;

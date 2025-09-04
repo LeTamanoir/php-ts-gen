@@ -12,7 +12,7 @@ final class Utils
     /**
      * @var array<string, string[]>
      */
-    public static $fqcnPartsCache = [];
+    public static array $fqcnPartsCache = [];
 
     /**
      * Property names can be quoted—so we only quote when necessary.
@@ -55,17 +55,33 @@ final class Utils
     }
 
     /**
+     * Strip the generic type from a type.
+     *
+     * @example
+     * ```php
+     * Utils::stripGeneric('array<string>'); // 'array'
+     * Utils::stripGeneric('non-empty-list<string>'); // 'non-empty-list'
+     * Utils::stripGeneric('list<string>'); // 'list'
+     * ```
+     */
+    public static function stripGeneric(string $type): string
+    {
+        for ($i = 0; $i < strlen($type); $i++) {
+            if ($type[$i] === '<') {
+                return substr($type, 0, $i);
+            }
+        }
+
+        return $type;
+    }
+
+    /**
      * Check if a type is an array type.
      */
     public static function isArrayType(string $type): bool
     {
-        $type = explode('<', $type, 2)[0] ?? '';
-
-        return match ($type) {
-            'non-empty-list',
-            'list',
-            'array' => true,
-
+        return match (self::stripGeneric($type)) {
+            'non-empty-list', 'list', 'array' => true,
             default => false,
         };
     }
@@ -75,14 +91,15 @@ final class Utils
      */
     public static function isBuiltinType(string $type): bool
     {
-        $type = explode('<', $type, 2)[0] ?? '';
+        if (self::isArrayType($type)) {
+            return true;
+        }
 
         return match ($type) {
             'int',
             'float',
             'string',
             'bool',
-            'array',
             'object',
             'callable',
             'iterable',
@@ -91,10 +108,8 @@ final class Utils
             'void',
             'false',
             'true',
-            'non-empty-list',
-            'list',
-            'never' => true,
-
+            'never',
+                => true,
             default => false,
         };
     }
@@ -112,15 +127,19 @@ final class Utils
             if ($ch === '<') {
                 $depth++;
                 $buf .= $ch;
-            } elseif ($ch === '>') {
+                continue;
+            }
+            if ($ch === '>') {
                 $depth = max(0, $depth - 1);
                 $buf .= $ch;
-            } elseif ($ch === $separator && $depth === 0) {
+                continue;
+            }
+            if ($ch === $separator && $depth === 0) {
                 $parts[] = trim($buf);
                 $buf = '';
-            } else {
-                $buf .= $ch;
+                continue;
             }
+            $buf .= $ch;
         }
 
         if ($buf !== '') {

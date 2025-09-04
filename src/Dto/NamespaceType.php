@@ -5,35 +5,37 @@ declare(strict_types=1);
 namespace Typographos\Dto;
 
 use Override;
-use Typographos\Interfaces\TypeScriptType;
-use Typographos\Traits\HasChildren;
+use Typographos\Interfaces\TypeScriptTypeInterface;
+use Typographos\Traits\HasChildrenTrait;
 
 /**
  * @api
  */
-final class NamespaceType implements TypeScriptType
+final class NamespaceType implements TypeScriptTypeInterface
 {
     /**
-     * @use HasChildren<NamespaceType|RecordType>
+     * @use HasChildrenTrait<NamespaceType|RecordType>
      */
-    use HasChildren;
+    use HasChildrenTrait;
 
     public function __construct(
-        public string $name
+        public string $name,
     ) {}
 
     #[Override]
     public function render(RenderCtx $ctx): string
     {
-        $idt = str_repeat($ctx->indent, $ctx->depth);
+        $indent = str_repeat($ctx->indent, $ctx->depth);
 
-        $ts = $idt.($ctx->depth === 0 ? 'declare namespace ' : 'export namespace ').$this->name." {\n";
+        $declaration = $ctx->depth === 0 ? 'declare namespace' : 'export namespace';
 
-        foreach ($this->children as $t) {
-            $ts .= $t->render($ctx->increaseDepth());
+        $ts = $indent . $declaration . ' ' . $this->name . " {\n";
+
+        foreach ($this->children as $child) {
+            $ts .= $child->render($ctx->increaseDepth());
         }
 
-        $ts .= $idt."}\n";
+        $ts .= $indent . "}\n";
 
         return $ts;
     }
