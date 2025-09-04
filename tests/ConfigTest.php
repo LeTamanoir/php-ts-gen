@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 use Typographos\Config;
 
 it('has sensible defaults', function (): void {
@@ -16,14 +17,14 @@ it('can set custom values in constructor', function (): void {
     $config = new Config()
         ->withIndent('  ')
         ->withTypeReplacement('int', 'number')
-        ->withTypeReplacement(DateTime::class, 'string')
+        ->withTypeReplacement(\DateTime::class, 'string')
         ->withAutoDiscoverDirectory('/some/path')
         ->withFilePath('custom.d.ts');
 
     expect($config->indent)->toBe('  ');
     expect($config->typeReplacements)->toBe([
         'int' => 'number',
-        DateTime::class => 'string',
+        \DateTime::class => 'string',
     ]);
     expect($config->autoDiscoverDirectory)->toBe('/some/path');
     expect($config->filePath)->toBe('custom.d.ts');
