@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Typographos\Dto;
 
+/**
+ * @api
+ */
 final class RenderCtx
 {
     public function __construct(
         public string $indent,
         public int $depth,
     ) {}
-
-    public static function root(): self
-    {
-        return new self(indent: '', depth: 0);
-    }
 
     public function increaseDepth(): self
     {

@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Typographos;
 
-class Config
+/**
+ * @api
+ */
+final class Config
 {
+    /**
+     * Create a new configuration with defaults.
+     *
+     * @api
+     *
+     * @param  array<string, string>  $typeReplacements
+     */
     public function __construct(
         public string $indent = "\t",
         public array $typeReplacements = [],
@@ -13,6 +23,11 @@ class Config
         public string $filePath = 'test.d.ts',
     ) {}
 
+    /**
+     * Set a custom indent for the generated code.
+     *
+     * @api
+     */
     public function withIndent(string $indent): self
     {
         $this->indent = $indent;
@@ -20,6 +35,11 @@ class Config
         return $this;
     }
 
+    /**
+     * Transform the given PHP type to a custom TypeScript type.
+     *
+     * @api
+     */
     public function withTypeReplacement(string $phpType, string $tsType): self
     {
         $this->typeReplacements[$phpType] = $tsType;
@@ -27,6 +47,11 @@ class Config
         return $this;
     }
 
+    /**
+     * Set the path to the file where the generated code will be written.
+     *
+     * @api
+     */
     public function withFilePath(string $filePath): self
     {
         $this->filePath = $filePath;
@@ -34,6 +59,11 @@ class Config
         return $this;
     }
 
+    /**
+     * Set the directory to auto-discover classes from.
+     *
+     * @api
+     */
     public function withAutoDiscoverDirectory(?string $autoDiscoverDirectory): self
     {
         $this->autoDiscoverDirectory = $autoDiscoverDirectory;

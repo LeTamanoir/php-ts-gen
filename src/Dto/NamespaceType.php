@@ -6,18 +6,17 @@ namespace Typographos\Dto;
 
 use Override;
 use Typographos\Interfaces\TypeScriptType;
-use Typographos\Traits\HasProperties;
-use Typographos\Utils;
+use Typographos\Traits\HasChildren;
 
 /**
  * @api
  */
-final class RecordType implements TypeScriptType
+final class NamespaceType implements TypeScriptType
 {
     /**
-     * @use HasProperties<TypeScriptType>
+     * @use HasChildren<NamespaceType|RecordType>
      */
-    use HasProperties;
+    use HasChildren;
 
     public function __construct(
         public string $name
@@ -27,12 +26,11 @@ final class RecordType implements TypeScriptType
     public function render(RenderCtx $ctx): string
     {
         $idt = str_repeat($ctx->indent, $ctx->depth);
-        $idtInner = $idt.$ctx->indent;
 
-        $ts = $idt.'export interface '.$this->name." {\n";
+        $ts = $idt.($ctx->depth === 0 ? 'declare namespace ' : 'export namespace ').$this->name." {\n";
 
-        foreach ($this->properties as $name => $type) {
-            $ts .= $idtInner.Utils::tsProp($name).': '.$type->render($ctx)."\n";
+        foreach ($this->children as $t) {
+            $ts .= $t->render($ctx->increaseDepth());
         }
 
         $ts .= $idt."}\n";

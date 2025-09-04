@@ -12,30 +12,26 @@ use Typographos\Utils;
 /**
  * @api
  */
-final class RecordType implements TypeScriptType
+final class InlineRecordType implements TypeScriptType
 {
     /**
      * @use HasProperties<TypeScriptType>
      */
     use HasProperties;
 
-    public function __construct(
-        public string $name
-    ) {}
-
     #[Override]
     public function render(RenderCtx $ctx): string
     {
-        $idt = str_repeat($ctx->indent, $ctx->depth);
-        $idtInner = $idt.$ctx->indent;
+        $idt = str_repeat($ctx->indent, $ctx->depth + 1);
+        $innerIdt = $idt.$ctx->indent;
 
-        $ts = $idt.'export interface '.$this->name." {\n";
+        $ts = "{\n";
 
         foreach ($this->properties as $name => $type) {
-            $ts .= $idtInner.Utils::tsProp($name).': '.$type->render($ctx)."\n";
+            $ts .= $innerIdt.Utils::tsProp($name).': '.$type->render($ctx)."\n";
         }
 
-        $ts .= $idt."}\n";
+        $ts .= $idt.'}';
 
         return $ts;
     }

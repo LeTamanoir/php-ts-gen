@@ -9,11 +9,7 @@ use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
-use ReflectionIntersectionType;
-use ReflectionNamedType;
 use ReflectionProperty;
-use ReflectionType;
-use ReflectionUnionType;
 use RuntimeException;
 use SplFileInfo;
 use Typographos\Attributes\TypeScript;
@@ -22,39 +18,40 @@ use Typographos\Dto\RawType;
 use Typographos\Dto\RecordType;
 use Typographos\Dto\ReferenceType;
 use Typographos\Dto\RenderCtx;
+use Typographos\Dto\RootNamespaceType;
 use Typographos\Dto\ScalarType;
 use Typographos\Dto\UnionType;
 use Typographos\Interfaces\TypeScriptType;
 
-class Codegen
+/**
+ * @api
+ */
+final class Codegen
 {
-    public function __construct(private Config $config) {}
+    public function __construct(
+        private Config $config
+    ) {}
 
-    public function generate(string ...$classNames)
+    /**
+     * Generate TypeScript types from the given class names
+     * and write them to the file specified in the config
+     *
+     * @param  class-string[]  $classNames
+     */
+    public function generate(array $classNames = []): void
     {
-        if ($this->config->autoDiscoverDirectory) {
+        if ($this->config->autoDiscoverDirectory !== null) {
             $classNames = [...$classNames, ...$this->autoDiscoverClasses()];
         }
 
-        if (count($classNames) === 0) {
-            throw new InvalidArgumentException('No classes to generate');
-        }
-
-        $queue = new Queue($classNames);
-        $records = [];
-
-        while ($className = $queue->shift()) {
-            $records[] = self::generateTsRecord($className, $queue);
-        }
-
-        $nsTree = $this->groupByNamespace(...$records);
+        $root = $this->parseClasses($classNames);
 
         $ctx = new RenderCtx(
             indent: $this->config->indent,
             depth: 0
         );
 
-        $ts = $this->renderNamespaceTree($ctx, $nsTree);
+        $ts = $root->render($ctx);
 
         if (
             (file_exists($this->config->filePath) && ! is_writable($this->config->filePath)) ||
@@ -64,6 +61,9 @@ class Codegen
         }
     }
 
+    /**
+     * @return class-string[]
+     */
     private function autoDiscoverClasses(): array
     {
         $dir = $this->config->autoDiscoverDirectory;
@@ -93,133 +93,182 @@ class Codegen
         return $classes;
     }
 
-    private function renderNamespaceTree(RenderCtx $ctx, array $tree): string
+    /**
+     * Generate TypeScript types from the given class names
+     *
+     * @param  class-string[]  $classNames
+     */
+    public function parseClasses(array $classNames): RootNamespaceType
     {
-        $ts = '';
-
-        // stable order helps with deterministic diffs
-        ksort($tree);
-
-        foreach ($tree as $segment => $node) {
-            $idt = str_repeat($ctx->indent, $ctx->depth);
-
-            if ($node instanceof RecordType) {
-                $ts .= $idt.'export interface '.$segment." {\n".$node->render($ctx->increaseDepth()).$idt."}\n";
-
-                continue;
-            }
-
-            $ts .= $idt.($ctx->depth === 0 ? 'declare namespace ' : 'namespace ').Utils::tsIdent($segment)." {\n";
-            $ts .= $this->renderNamespaceTree($ctx->increaseDepth(), $node);
-            $ts .= $idt."}\n";
+        if (count($classNames) === 0) {
+            throw new InvalidArgumentException('No classes to generate');
         }
 
-        return $ts;
-    }
+        $queue = new Queue($classNames);
+        $root = new RootNamespaceType;
 
-    private function groupByNamespace(RecordType ...$records)
-    {
-        $namespaces = [];
-
-        foreach ($records as $r) {
-            $parts = array_filter(explode('\\', $r->name));
-
-            $ptr = &$namespaces;
-            foreach ($parts as $p) {
-                $ptr[$p] ??= [];
-                $ptr = &$ptr[$p];
-            }
-            $ptr = $r;
-            unset($ptr); // safety if we forget to reassign in the future
+        while ($className = $queue->shift()) {
+            $namespace = preg_replace('/\\\\[^\\\\]+$/', '', $className);
+            $root->addRecord($namespace, $this->parseClass($className, $queue));
         }
 
-        return $namespaces;
+        return $root;
     }
 
-    private function generateTsRecord(string $className, Queue $queue)
+    /**
+     * @param  class-string  $className
+     */
+    private function parseClass(string $className, Queue $queue): RecordType
     {
         $ref = new ReflectionClass($className);
 
-        $ts = new RecordType($className);
+        $r = new RecordType($ref->getShortName());
 
         foreach ($ref->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
-            $type = $prop->getType();
-
+            $type = (string) $prop->getType();
             $propName = $prop->getName();
 
-            if ($type === null) {
-                $ts->addProperty($propName, ScalarType::unknown);
-
-                continue;
-            }
-
-            $tsType = $this->mapType($type, $prop, $queue);
-            $ts->addProperty($propName, $tsType);
+            $req = $this->mapRequirements($type, $prop);
+            $ts = $this->mapType($req, $queue);
+            $r->addProperty($propName, $ts);
         }
 
-        return $ts;
+        return $r;
     }
 
-    private function mapType(ReflectionType $type, ReflectionProperty $prop, Queue $queue): TypeScriptType
+    private function applyRequirements(string $type, ReflectionProperty $prop): string
     {
-        if ($type instanceof ReflectionUnionType) {
-            $parts = [];
-            foreach ($type->getTypes() as $t) {
-                $parts[] = $this->mapType($t, $prop, $queue);
+        if ($type === 'array') {
+            $declClass = $prop->getDeclaringClass();
+            $errorLoc = 'for property $'.$prop->getName().' in '.$declClass->getFileName().':'.$declClass->getStartLine();
+
+            if ($doc = $prop->getDocComment()) {
+                if (! preg_match('/@var\s+([^*]+)/i', $doc, $m)) {
+                    throw new InvalidArgumentException('Malformed PHPDoc ['.$doc.'] '.$errorLoc);
+                }
+            } elseif ($doc = $declClass->getConstructor()->getDocComment()) {
+                if (! preg_match('/@param\s+([^\s*]+)\s+\$'.preg_quote($prop->getName()).'/i', $doc, $m)) {
+                    throw new InvalidArgumentException('Malformed PHPDoc ['.$doc.'] '.$errorLoc);
+                }
+            } else {
+                throw new InvalidArgumentException('Missing doc comment '.$errorLoc);
             }
 
-            return new UnionType($parts);
+            return trim($m[1]);
         }
 
-        if ($type instanceof ReflectionIntersectionType) {
+        if ($type === 'self') {
+            return $prop->getDeclaringClass()->getName();
+        }
+
+        if ($type === 'parent') {
+            while ($type === 'parent') {
+                $type = get_parent_class($prop->getDeclaringClass()->getName());
+                if (! $type) {
+                    throw new InvalidArgumentException('Parent class not found for '.$prop->getDeclaringClass()->getName());
+                }
+            }
+
+            return $type;
+        }
+
+        return $type;
+    }
+
+    /**
+     * Some PHP types require additional requirements before they can be mapped.
+     */
+    private function mapRequirements(string $type, ReflectionProperty $prop): string
+    {
+        // intersections are not supported
+        if (str_contains($type, '&')) {
             throw new InvalidArgumentException('Intersection types are not supported');
         }
 
-        assert($type instanceof ReflectionNamedType);
-
-        $name = $type->getName();
-
-        if (isset($this->config->typeReplacements[$name])) {
-            return new RawType($this->config->typeReplacements[$name]);
+        // if nullable it can't be a union
+        if (str_starts_with($type, '?')) {
+            return '?'.$this->applyRequirements(substr($type, 1), $prop);
         }
 
-        if ($type->isBuiltin()) {
-            if ($name === 'array') {
-                return ArrayType::from($prop, $queue);
-            }
+        $types = Utils::splitTopLevel($type, '|');
+        $parts = [];
 
-            $ts = ScalarType::from($name);
+        foreach ($types as $t) {
+            $parts[] = $this->applyRequirements($t, $prop);
+        }
 
-            if ($type->allowsNull() && $name !== 'null' && $name !== 'mixed') {
+        return implode('|', $parts);
+    }
+
+    /**
+     * @internal
+     */
+    public function mapType(string $type, Queue $queue): TypeScriptType
+    {
+        $types = Utils::splitTopLevel($type, '|');
+        $parts = [];
+
+        if (count($types) === 0) {
+            return ScalarType::unknown;
+        }
+
+        foreach ($types as $t) {
+            $parts[] = $this->mapNamedType($t, $queue);
+        }
+
+        if (count($parts) === 1) {
+            return $parts[0];
+        }
+
+        return new UnionType($parts);
+    }
+
+    private function mapNamedType(string $type, Queue $queue): TypeScriptType
+    {
+        if ($type === '') {
+            return ScalarType::unknown;
+        }
+
+        $allowsNull = str_starts_with($type, '?');
+        if ($allowsNull) {
+            $type = substr($type, 1);
+        }
+
+        if (isset($this->config->typeReplacements[$type])) {
+            $ts = new RawType($this->config->typeReplacements[$type]);
+
+            if ($allowsNull) {
                 return new UnionType([$ts, ScalarType::null]);
             }
 
             return $ts;
         }
 
-        // for class-like names we need to resolve self/parent if necessary
-        if ($name === 'self') {
-            $name = $prop->getDeclaringClass()->getName();
-        } elseif ($name === 'parent') {
-            while ($name === 'parent') {
-                $parent = get_parent_class($prop->getDeclaringClass()->getName());
-                $name = $parent ?: 'parent'; // fallback
+        if (Utils::isBuiltinType($type)) {
+            $ts = Utils::isArrayType($type)
+                ? ArrayType::from($this, $type, $queue)
+                : ScalarType::from($type);
+
+            if ($allowsNull && $type !== 'null' && $type !== 'mixed') {
+                return new UnionType([$ts, ScalarType::null]);
             }
+
+            return $ts;
         }
 
-        $userDefined = class_exists($name) && new ReflectionClass($name)->isUserDefined();
+        $userDefined = class_exists($type) && new ReflectionClass($type)->isUserDefined();
 
         if ($userDefined) {
-            $queue->enqueue($name);
+            $queue->enqueue($type);
         }
 
-        $ref = $userDefined ? new ReferenceType($name) : ScalarType::unknown;
+        $ts = $userDefined ? new ReferenceType($type) : ScalarType::unknown;
 
         // nullable class type
-        if ($type->allowsNull()) {
-            return new UnionType([$ref, ScalarType::null]);
+        if ($allowsNull) {
+            return new UnionType([$ts, ScalarType::null]);
         }
 
-        return $ref;
+        return $ts;
     }
 }
