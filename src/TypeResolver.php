@@ -14,33 +14,43 @@ final class TypeResolver
      *
      * @throws InvalidArgumentException
      */
-    public static function resolveType(string $type, ReflectionProperty $prop): string
+    public static function resolve(ReflectionProperty $prop): string
     {
+        $type = (string) $prop->getType();
+
+        if ($type === '') {
+            return '';
+        }
+
         if (str_contains($type, '&')) {
             throw new InvalidArgumentException('Intersection types are not supported');
         }
 
+        // nullable starting with `?` can't be unioned
         if (str_starts_with($type, '?')) {
-            return '?' . self::handleSpecialTypes(substr($type, 1), $prop);
+            return '?' . self::resolveType(substr($type, 1), $prop);
         }
 
         $types = Utils::splitTopLevel($type, '|');
-        $resolved = [];
+        $resolved = '';
 
-        foreach ($types as $t) {
-            $resolved[] = self::handleSpecialTypes($t, $prop);
+        for ($i = 0; $i < count($types); $i++) {
+            $resolved .= self::resolveType($types[$i], $prop);
+            if ($i < (count($types) - 1)) {
+                $resolved .= '|';
+            }
         }
 
-        return implode('|', $resolved);
+        return $resolved;
     }
 
     /**
      * Handle special PHP types that need transformation
      */
-    private static function handleSpecialTypes(string $type, ReflectionProperty $prop): string
+    private static function resolveType(string $type, ReflectionProperty $prop): string
     {
         return match ($type) {
-            'array' => self::parseArrayFromDocBlock($prop),
+            'array' => self::resolveArrayType($prop),
             'self' => $prop->getDeclaringClass()->getName(),
             'parent' => self::resolveParentType($prop),
             default => $type,
@@ -54,9 +64,10 @@ final class TypeResolver
      * 1. Property-level @var docblock
      * 2. Constructor @param docblock
      */
-    private static function parseArrayFromDocBlock(ReflectionProperty $prop): string
+    private static function resolveArrayType(ReflectionProperty $prop): string
     {
-        $errorContext = self::buildErrorContext($prop);
+        $declClass = $prop->getDeclaringClass();
+        $errorContext = "for property \${$prop->getName()} in {$declClass->getFileName()}:{$declClass->getStartLine()}";
 
         // Try property @var docblock first
         $doc = $prop->getDocComment();
@@ -79,16 +90,6 @@ final class TypeResolver
         }
 
         throw new InvalidArgumentException("Missing doc comment {$errorContext}");
-    }
-
-    /**
-     * Build error context string for better error messages
-     */
-    private static function buildErrorContext(ReflectionProperty $prop): string
-    {
-        $declClass = $prop->getDeclaringClass();
-
-        return "for property \${$prop->getName()} in {$declClass->getFileName()}:{$declClass->getStartLine()}";
     }
 
     /**
