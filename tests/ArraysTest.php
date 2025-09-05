@@ -33,36 +33,36 @@ it('can handle invalid arrays', function (): void {
         ->outputTo('tests/arrays-generated.d.ts')
         ->withIndent('    ');
 
-    expect(fn() => $gen->generate([InvalidArrayVarDocBlock::class]))
+    expect(fn () => $gen->generate([InvalidArrayVarDocBlock::class]))
         ->toThrow(InvalidArgumentException::class, 'Malformed PHPDoc [/** @invalid-var-tag */]');
 
-    expect(fn() => $gen->generate([InvalidArrayMissingDocBlock::class]))
+    expect(fn () => $gen->generate([InvalidArrayMissingDocBlock::class]))
         ->toThrow(InvalidArgumentException::class, 'Missing doc comment');
 
-    expect(fn() => $gen->generate([InvalidArrayParamDocBlock::class]))
+    expect(fn () => $gen->generate([InvalidArrayParamDocBlock::class]))
         ->toThrow(InvalidArgumentException::class, "Malformed PHPDoc [/**\n     * @param invalid-type\n     */]");
 
-    expect(fn() => $gen->generate([InvalidArrayList::class]))
+    expect(fn () => $gen->generate([InvalidArrayList::class]))
         ->toThrow(
             InvalidArgumentException::class,
             'Expected exactly one type argument when evaluating [list<int, int, int>]',
         );
 
-    expect(fn() => $gen->generate([InvalidArrayNonEmptyList::class]))
+    expect(fn () => $gen->generate([InvalidArrayNonEmptyList::class]))
         ->toThrow(
             InvalidArgumentException::class,
             'Expected exactly one type argument when evaluating [non-empty-list<int, int, int>]',
         );
 
-    expect(fn() => $gen->generate([InvalidArrayArray::class]))
+    expect(fn () => $gen->generate([InvalidArrayArray::class]))
         ->toThrow(
             InvalidArgumentException::class,
             'Expected array<K,V> to have exactly two type args when evaluating [array<int, int, int, int>]',
         );
 
-    expect(fn() => $gen->generate([InvalidArrayArrayType::class]))
+    expect(fn () => $gen->generate([InvalidArrayArrayType::class]))
         ->toThrow(InvalidArgumentException::class, 'Unsupported PHPDoc array type array');
 
-    expect(fn() => $gen->generate([InvalidArrayArrayKey::class]))
+    expect(fn () => $gen->generate([InvalidArrayArrayKey::class]))
         ->toThrow(InvalidArgumentException::class, 'Unsupported array key type [float]');
 });

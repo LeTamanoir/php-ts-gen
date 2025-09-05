@@ -36,7 +36,7 @@ trait HasChildrenTrait
         }
 
         if (isset($this->children[$childKey])) {
-            throw new InvalidArgumentException('Child ' . $childKey . ' already exists');
+            throw new InvalidArgumentException('Child '.$childKey.' already exists');
         }
 
         $this->children[$childKey] = $type;

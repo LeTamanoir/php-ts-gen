@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Typographos\Generator;
 
 it('has sensible defaults', function (): void {
-    $generator = new Generator();
+    $generator = new Generator;
 
     expect($generator->indent)->toBe("\t");
     expect($generator->typeReplacements)->toBe([]);

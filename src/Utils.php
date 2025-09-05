@@ -105,8 +105,7 @@ final class Utils
             'void',
             'false',
             'true',
-            'never',
-                => true,
+            'never', => true,
             default => false,
         };
     }
@@ -124,16 +123,19 @@ final class Utils
             if ($ch === '<') {
                 $depth++;
                 $buf .= $ch;
+
                 continue;
             }
             if ($ch === '>') {
                 $depth = max(0, $depth - 1);
                 $buf .= $ch;
+
                 continue;
             }
             if ($ch === $separator && $depth === 0) {
                 $parts[] = trim($buf);
                 $buf = '';
+
                 continue;
             }
             $buf .= $ch;

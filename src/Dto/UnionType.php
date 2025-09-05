@@ -44,7 +44,7 @@ final class UnionType implements TypeScriptTypeInterface
 
         foreach ($this->types as $type) {
             $rendered = $type->render($ctx);
-            if (!isset($seen[$rendered])) {
+            if (! isset($seen[$rendered])) {
                 $uniqueTypes[] = $rendered;
                 $seen[$rendered] = true;
             }

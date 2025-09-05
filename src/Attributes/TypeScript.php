@@ -10,6 +10,4 @@ use Attribute;
  * TypeScript attribute to mark a class for type generation.
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-final class TypeScript
-{
-}
+final class TypeScript {}

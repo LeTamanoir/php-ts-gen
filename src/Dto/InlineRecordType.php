@@ -29,7 +29,7 @@ final class InlineRecordType implements TypeScriptTypeInterface
     public static function from(GenCtx $ctx, string $className): self
     {
         $ref = new ReflectionClass($className);
-        $record = new InlineRecordType();
+        $record = new InlineRecordType;
 
         foreach ($ref->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
             $propName = $prop->getName();
@@ -48,15 +48,15 @@ final class InlineRecordType implements TypeScriptTypeInterface
     public function render(RenderCtx $ctx): string
     {
         $indent = str_repeat($ctx->indent, $ctx->depth + 1);
-        $propIndent = $indent . $ctx->indent;
+        $propIndent = $indent.$ctx->indent;
 
         $ts = "{\n";
 
         foreach ($this->properties as $name => $type) {
-            $ts .= $propIndent . Utils::tsProp($name) . ': ' . $type->render($ctx) . "\n";
+            $ts .= $propIndent.Utils::tsProp($name).': '.$type->render($ctx)."\n";
         }
 
-        $ts .= $indent . '}';
+        $ts .= $indent.'}';
 
         return $ts;
     }

@@ -54,15 +54,15 @@ final class RecordType implements TypeScriptTypeInterface
     public function render(RenderCtx $ctx): string
     {
         $indent = str_repeat($ctx->indent, $ctx->depth);
-        $propIndent = $indent . $ctx->indent;
+        $propIndent = $indent.$ctx->indent;
 
-        $ts = $indent . 'export interface ' . $this->name . " {\n";
+        $ts = $indent.'export interface '.$this->name." {\n";
 
         foreach ($this->properties as $name => $type) {
-            $ts .= $propIndent . Utils::tsProp($name) . ': ' . $type->render($ctx) . "\n";
+            $ts .= $propIndent.Utils::tsProp($name).': '.$type->render($ctx)."\n";
         }
 
-        $ts .= $indent . "}\n";
+        $ts .= $indent."}\n";
 
         return $ts;
     }

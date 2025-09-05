@@ -28,7 +28,7 @@ trait HasPropertiesTrait
         }
 
         if (isset($this->properties[$propertyKey])) {
-            throw new InvalidArgumentException('Property ' . $propertyKey . ' already exists');
+            throw new InvalidArgumentException('Property '.$propertyKey.' already exists');
         }
 
         $this->properties[$propertyKey] = $property;

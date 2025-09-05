@@ -33,7 +33,7 @@ enum ScalarType implements TypeScriptTypeInterface
             'null' => self::null,
             'true' => self::true,
             'false' => self::false,
-            default => throw new InvalidArgumentException('Unsupported scalar type ' . $phpScalar),
+            default => throw new InvalidArgumentException('Unsupported scalar type '.$phpScalar),
         };
     }
 

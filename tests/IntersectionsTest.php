@@ -6,7 +6,7 @@ use Typographos\Generator;
 use Typographos\Tests\Fixtures\Intersections;
 
 it('cannot generate intersections', function (): void {
-    expect(fn() => new Generator()
+    expect(fn () => new Generator()
         ->outputTo('tests/intersections-generated.d.ts')
         ->withIndent('    ')
         ->generate([Intersections::class]))

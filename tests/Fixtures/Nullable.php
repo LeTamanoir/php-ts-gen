@@ -9,9 +9,9 @@ use DateTime;
 class Nullable
 {
     public function __construct(
-        public null|string $maybeString,
-        public null|int $maybeInt,
-        public null|self $maybeSelf,
-        public null|DateTime $maybeDate,
+        public ?string $maybeString,
+        public ?int $maybeInt,
+        public ?self $maybeSelf,
+        public ?DateTime $maybeDate,
     ) {}
 }

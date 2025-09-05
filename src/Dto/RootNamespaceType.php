@@ -22,7 +22,7 @@ final class RootNamespaceType implements TypeScriptTypeInterface
      */
     public static function from(GenCtx $ctx): self
     {
-        $root = new self();
+        $root = new self;
 
         // process all classes in queue (queue may grow during processing)
         while ($className = $ctx->queue->shift()) {
@@ -48,7 +48,7 @@ final class RootNamespaceType implements TypeScriptTypeInterface
         /** @var RootNamespaceType|NamespaceType $node */
         $node = $this;
         foreach ($parts as $part) {
-            $nsKey = 'NamespaceType::' . $part;
+            $nsKey = 'NamespaceType::'.$part;
 
             $existingChild = $node->getChild($nsKey);
 
@@ -63,7 +63,7 @@ final class RootNamespaceType implements TypeScriptTypeInterface
             }
         }
 
-        $node->addChild('RecordType::' . $record->name, $record);
+        $node->addChild('RecordType::'.$record->name, $record);
     }
 
     #[Override]

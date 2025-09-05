@@ -26,13 +26,13 @@ final class NamespaceType implements TypeScriptTypeInterface
 
         $declaration = $ctx->depth === 0 ? 'declare namespace' : 'export namespace';
 
-        $ts = $indent . $declaration . ' ' . $this->name . " {\n";
+        $ts = $indent.$declaration.' '.$this->name." {\n";
 
         foreach ($this->children as $child) {
             $ts .= $child->render($ctx->increaseDepth());
         }
 
-        $ts .= $indent . "}\n";
+        $ts .= $indent."}\n";
 
         return $ts;
     }

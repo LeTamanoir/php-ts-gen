@@ -28,7 +28,7 @@ final class TypeResolver
 
         // nullable starting with `?` can't be unioned
         if (str_starts_with($type, '?')) {
-            return '?' . self::resolveType(substr($type, 1), $prop);
+            return '?'.self::resolveType(substr($type, 1), $prop);
         }
 
         $types = Utils::splitTopLevel($type, '|');
@@ -46,7 +46,7 @@ final class TypeResolver
 
     /**
      * Handle special PHP types that need transformation
-     * 
+     *
      * @throws InvalidArgumentException
      */
     private static function resolveType(string $type, ReflectionProperty $prop): string
@@ -65,7 +65,7 @@ final class TypeResolver
      * Searches for array type information in two locations:
      * 1. Property-level @var docblock
      * 2. Constructor @param docblock
-     * 
+     *
      * @throws InvalidArgumentException
      */
     private static function resolveArrayType(ReflectionProperty $prop): string
@@ -99,7 +99,7 @@ final class TypeResolver
     /**
      * Extract type from '@var' docblock
      */
-    private static function extractVarType(string $doc): null|string
+    private static function extractVarType(string $doc): ?string
     {
         $matches = null;
         $pattern = '/@var\s+([^*]+)/i';
@@ -114,10 +114,10 @@ final class TypeResolver
     /**
      * Extract type from '@param' docblock
      */
-    private static function extractParamType(string $doc, string $propName): null|string
+    private static function extractParamType(string $doc, string $propName): ?string
     {
         $matches = null;
-        $pattern = sprintf('/@param\s+([^\s*]+)\s+%s/i', preg_quote('$' . $propName));
+        $pattern = sprintf('/@param\s+([^\s*]+)\s+%s/i', preg_quote('$'.$propName));
 
         if (preg_match($pattern, $doc, $matches)) {
             return trim($matches[1]);
@@ -138,8 +138,8 @@ final class TypeResolver
 
         while ($type === 'parent') {
             $type = get_parent_class($currentClass);
-            if (!$type) {
-                throw new InvalidArgumentException('Parent class not found for ' . $currentClass);
+            if (! $type) {
+                throw new InvalidArgumentException('Parent class not found for '.$currentClass);
             }
             $currentClass = $type;
         }

@@ -28,7 +28,7 @@ final class Generator
     /**
      * Directory to auto-discover classes from
      */
-    public null|string $discoverDirectory = null;
+    public ?string $discoverDirectory = null;
 
     /**
      * File path to write the generated types to
@@ -110,8 +110,8 @@ final class Generator
 
         $ts = $root->render($renderCtx);
 
-        if (file_exists($this->filePath) && !is_writable($this->filePath) || !file_put_contents($this->filePath, $ts)) {
-            throw new RuntimeException('Failed to write generated types to file ' . $this->filePath);
+        if (file_exists($this->filePath) && ! is_writable($this->filePath) || ! file_put_contents($this->filePath, $ts)) {
+            throw new RuntimeException('Failed to write generated types to file '.$this->filePath);
         }
     }
 }

@@ -33,7 +33,7 @@ it('can use auto-discovery', function (): void {
     new Generator()
         ->outputTo('tests/discovery-chain-generated.d.ts')
         ->withIndent('    ')
-        ->discoverFrom(__DIR__ . '/Fixtures')
+        ->discoverFrom(__DIR__.'/Fixtures')
         ->generate();
 
     expect(file_get_contents('tests/discovery-chain-generated.d.ts'))
@@ -42,18 +42,18 @@ it('can use auto-discovery', function (): void {
 
 it('cannot discover from broken directory', function (): void {
     expect(
-        fn() => new Generator()
+        fn () => new Generator()
             ->outputTo('tests/discovery-chain-generated.d.ts')
             ->withIndent('    ')
-            ->discoverFrom(__DIR__ . '/unknown')
+            ->discoverFrom(__DIR__.'/unknown')
             ->generate(),
     )
-        ->toThrow(RuntimeException::class, 'Auto discover directory not found: ' . __DIR__ . '/unknown');
+        ->toThrow(RuntimeException::class, 'Auto discover directory not found: '.__DIR__.'/unknown');
 });
 
 it('cannot generate nothing', function (): void {
     expect(
-        fn() => new Generator()
+        fn () => new Generator()
             ->outputTo('tests/discovery-chain-generated.d.ts')
             ->withIndent('    ')
             ->generate(),
@@ -65,7 +65,7 @@ it('cannot write to broken destination', function (): void {
     touch('tests/broken-file.d.ts');
     chmod('tests/broken-file.d.ts', 0);
 
-    expect(fn() => new Generator()
+    expect(fn () => new Generator()
         ->outputTo('tests/broken-file.d.ts')
         ->withIndent('    ')
         ->generate([Scalars::class]))
@@ -73,12 +73,12 @@ it('cannot write to broken destination', function (): void {
 });
 
 it('can use fluent constructor', function (): void {
-    $generator = new Generator();
+    $generator = new Generator;
     expect($generator)->toBeInstanceOf(Generator::class);
 });
 
 it('can use fluent withTypeReplacement method', function (): void {
-    $generator = new Generator();
+    $generator = new Generator;
 
     $generator
         ->withTypeReplacement('int', 'number')
@@ -89,10 +89,10 @@ it('can use fluent withTypeReplacement method', function (): void {
 });
 
 it('can use discoverFrom fluent interface', function (): void {
-    $generator = new Generator();
+    $generator = new Generator;
 
     $generator
-        ->discoverFrom(__DIR__ . '/Fixtures')
+        ->discoverFrom(__DIR__.'/Fixtures')
         ->withIndent('    ')
         ->outputTo('tests/discovery-chain-generated.d.ts');
 
