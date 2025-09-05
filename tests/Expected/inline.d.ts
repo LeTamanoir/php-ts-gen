@@ -1,14 +1,32 @@
 declare namespace Typographos {
 	export namespace Tests {
 		export namespace Fixtures {
-			export interface UserWithInlineAddress {
-				name: string
-				address: {
-					street: string
-					city: string
-					zipCode: string
+			export interface InlineRecords {
+				inlineScalars: {
+					string: string
+					int: number
+					float: number
+					bool: boolean
+					object: object
+					mixed: any
+					null: null
+					true: true
+					false: false
+					noType: unknown
 				}
-				age: number
+				scalars: Typographos.Tests.Fixtures.Scalars
+			}
+			export interface Scalars {
+				string: string
+				int: number
+				float: number
+				bool: boolean
+				object: object
+				mixed: any
+				null: null
+				true: true
+				false: false
+				noType: unknown
 			}
 		}
 	}
