@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Typographos\Dto;
 
+use InvalidArgumentException;
 use Override;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Traits\HasPropertiesTrait;
@@ -24,6 +26,10 @@ final class RecordType implements TypeScriptTypeInterface
         public string $name,
     ) {}
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
+     */
     public static function from(GenCtx $ctx, string $className): self
     {
         $ref = new ReflectionClass($className);

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Typographos;
 
 use InvalidArgumentException;
+use ReflectionException;
 use RuntimeException;
 use Typographos\Dto\GenCtx;
-use Typographos\Dto\RecordType;
 use Typographos\Dto\RenderCtx;
 use Typographos\Dto\RootNamespaceType;
 
@@ -80,6 +80,10 @@ final class Generator
      * and write them to the file specified in the generator
      *
      * @param  array<class-string>  $classNames
+     *
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     * @throws ReflectionException
      */
     public function generate(array $classNames = []): void
     {

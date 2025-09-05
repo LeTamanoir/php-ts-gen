@@ -8,6 +8,7 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionException;
 use RuntimeException;
 use SplFileInfo;
 use Typographos\Attributes\TypeScript;
@@ -22,6 +23,8 @@ final class ClassDiscovery
      * with this attribute are included in the result.
      *
      * @return class-string[]
+     * @throws RuntimeException
+     * @throws ReflectionException
      */
     public static function discover(string $dir): array
     {
@@ -46,7 +49,8 @@ final class ClassDiscovery
 
         foreach (get_declared_classes() as $class) {
             $ref = new ReflectionClass($class);
-            if ($ref->getFileName() && !str_starts_with($ref->getFileName(), $dir)) {
+            $fileName = $ref->getFileName();
+            if ($fileName !== false && !str_starts_with($fileName, $dir)) {
                 continue;
             }
             if ($ref->getAttributes(TypeScript::class)) {

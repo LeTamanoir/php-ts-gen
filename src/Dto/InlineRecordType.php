@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Typographos\Dto;
 
+use InvalidArgumentException;
 use Override;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Traits\HasPropertiesTrait;
@@ -20,6 +22,10 @@ final class InlineRecordType implements TypeScriptTypeInterface
      */
     use HasPropertiesTrait;
 
+    /**
+     * @throws ReflectionException
+     * @throws InvalidArgumentException
+     */
     public static function from(GenCtx $ctx, string $className): self
     {
         $ref = new ReflectionClass($className);

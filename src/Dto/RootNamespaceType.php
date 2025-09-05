@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Typographos\Dto;
 
+use InvalidArgumentException;
 use Override;
+use ReflectionException;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Traits\HasChildrenTrait;
 use Typographos\Utils;
@@ -14,16 +16,19 @@ final class RootNamespaceType implements TypeScriptTypeInterface
     /** @use HasChildrenTrait<RecordType|NamespaceType> */
     use HasChildrenTrait;
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
+     */
     public static function from(GenCtx $ctx): self
     {
         $root = new self();
 
         // process all classes in queue (queue may grow during processing)
-        while ($ctx->queue->isNotEmpty()) {
-            $className = $ctx->queue->shift();
-
+        while ($className = $ctx->queue->shift()) {
             // extract namespace: App\DTO\User → App\DTO
-            $namespace = substr($className, 0, strrpos($className, '\\'));
+            $lastBackslash = strrpos($className, '\\');
+            $namespace = $lastBackslash !== false ? substr($className, 0, $lastBackslash) : $className;
 
             $record = RecordType::from($ctx, $className);
 
@@ -33,6 +38,9 @@ final class RootNamespaceType implements TypeScriptTypeInterface
         return $root;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function addRecord(string $namespace, RecordType $record): void
     {
         $parts = Utils::fqcnParts($namespace);

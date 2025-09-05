@@ -37,15 +37,10 @@ final class Queue
         $this->queue[$className] = true;
     }
 
-    public function isNotEmpty(): bool
-    {
-        return array_key_first($this->queue) !== null;
-    }
-
     /**
      * @return class-string|null
      */
-    public function shift(): null|string
+    public function shift(): string|null
     {
         $className = array_key_first($this->queue);
 

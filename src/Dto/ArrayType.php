@@ -6,6 +6,7 @@ namespace Typographos\Dto;
 
 use InvalidArgumentException;
 use Override;
+use ReflectionException;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\TypeConverter;
 use Typographos\Utils;
@@ -31,11 +32,13 @@ final class ArrayType implements TypeScriptTypeInterface
      * - non-empty-list<T> → [T, ...T[]]
      * - array<K,V> → V[] or { [key: string]: V }
      *
-     * @param  array<string, string>  $typeReplacements
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     public static function from(GenCtx $ctx, string $type): self
     {
         // Parse generic array notation
+        $matches = null;
         if (!preg_match('/^([a-z-]+)<(.+)>$/i', $type, $matches)) {
             throw new InvalidArgumentException('Unsupported PHPDoc array type ' . trim($type));
         }
@@ -52,6 +55,9 @@ final class ArrayType implements TypeScriptTypeInterface
 
     /**
      * Create list<T> array type
+     * 
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     private static function createList(GenCtx $ctx, string $typeArgs, string $originalType): self
     {
@@ -67,6 +73,9 @@ final class ArrayType implements TypeScriptTypeInterface
 
     /**
      * Create non-empty-list<T> array type
+     * 
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     private static function createNonEmptyList(GenCtx $ctx, string $typeArgs, string $originalType): self
     {
@@ -82,7 +91,9 @@ final class ArrayType implements TypeScriptTypeInterface
 
     /**
      * Create array<K,V> type with key-value pairs
-     *
+     * 
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     private static function createArray(GenCtx $ctx, string $typeArgs, string $originalType): self
     {

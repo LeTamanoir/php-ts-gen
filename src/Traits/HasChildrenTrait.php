@@ -19,7 +19,7 @@ trait HasChildrenTrait
     /**
      * @return T|null
      */
-    public function getChild(string $childKey): mixed
+    public function getChild(string $childKey)
     {
         return $this->children[$childKey] ?? null;
     }

@@ -35,7 +35,7 @@
     "scripts": {
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
-        "fmt": "vendor/bin/mago format",
+        "format": "vendor/bin/mago format",
         "lint": "vendor/bin/mago analyze"
     },
     "config": {

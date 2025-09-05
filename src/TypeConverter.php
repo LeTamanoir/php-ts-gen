@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Typographos;
 
+use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionProperty;
+use ReflectionException;
 use Typographos\Attributes\InlineType;
 use Typographos\Dto\ArrayType;
 use Typographos\Dto\GenCtx;
@@ -20,6 +21,9 @@ final class TypeConverter
 {
     /**
      * Convert resolved PHP type to TypeScript type
+     *
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     public static function convert(GenCtx $ctx, string $type): TypeScriptTypeInterface
     {
@@ -43,6 +47,9 @@ final class TypeConverter
 
     /**
      * Convert a single PHP type to TypeScript
+     *
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
      */
     private static function convertType(GenCtx $ctx, string $type): TypeScriptTypeInterface
     {

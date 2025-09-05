@@ -18,6 +18,8 @@ trait HasPropertiesTrait
 
     /**
      * @param  T  $property
+     *
+     * @throws InvalidArgumentException
      */
     public function addProperty(string $propertyKey, mixed $property): self
     {
