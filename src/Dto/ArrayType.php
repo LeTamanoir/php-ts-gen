@@ -7,13 +7,9 @@ namespace Typographos\Dto;
 use InvalidArgumentException;
 use Override;
 use Typographos\Interfaces\TypeScriptTypeInterface;
-use Typographos\Queue;
 use Typographos\TypeConverter;
 use Typographos\Utils;
 
-/**
- * @api
- */
 final class ArrayType implements TypeScriptTypeInterface
 {
     private function __construct(
@@ -37,7 +33,7 @@ final class ArrayType implements TypeScriptTypeInterface
      *
      * @param  array<string, string>  $typeReplacements
      */
-    public static function from(array $typeReplacements, string $type, Queue $queue): self
+    public static function from(GenCtx $ctx, string $type): self
     {
         // Parse generic array notation
         if (!preg_match('/^([a-z-]+)<(.+)>$/i', $type, $matches)) {
@@ -47,51 +43,39 @@ final class ArrayType implements TypeScriptTypeInterface
         [$_, $arrayTypeName, $typeArgs] = $matches;
 
         return match (strtolower($arrayTypeName)) {
-            'list' => self::createList($typeArgs, $queue, $typeReplacements, $type),
-            'non-empty-list' => self::createNonEmptyList($typeArgs, $queue, $typeReplacements, $type),
-            'array' => self::createArray($typeArgs, $queue, $typeReplacements, $type),
+            'list' => self::createList($ctx, $typeArgs, $type),
+            'non-empty-list' => self::createNonEmptyList($ctx, $typeArgs, $type),
+            'array' => self::createArray($ctx, $typeArgs, $type),
             default => throw new InvalidArgumentException('Unsupported PHPDoc array type ' . trim($type)),
         };
     }
 
     /**
      * Create list<T> array type
-     *
-     * @param  array<string, string>  $typeReplacements
      */
-    private static function createList(
-        string $typeArgs,
-        Queue $queue,
-        array $typeReplacements,
-        string $originalType,
-    ): self {
+    private static function createList(GenCtx $ctx, string $typeArgs, string $originalType): self
+    {
         $types = Utils::splitTopLevel(trim($typeArgs), ',');
         if (count($types) !== 1) {
             throw new InvalidArgumentException("Expected exactly one type argument when evaluating [{$originalType}]");
         }
 
-        $valueType = TypeConverter::convertToTypeScript(trim($types[0]), $queue, $typeReplacements);
+        $valueType = TypeConverter::convert($ctx, trim($types[0]));
 
         return new self(ArrayKind::List, $valueType);
     }
 
     /**
      * Create non-empty-list<T> array type
-     *
-     * @param  array<string, string>  $typeReplacements
      */
-    private static function createNonEmptyList(
-        string $typeArgs,
-        Queue $queue,
-        array $typeReplacements,
-        string $originalType,
-    ): self {
+    private static function createNonEmptyList(GenCtx $ctx, string $typeArgs, string $originalType): self
+    {
         $types = Utils::splitTopLevel(trim($typeArgs), ',');
         if (count($types) !== 1) {
             throw new InvalidArgumentException("Expected exactly one type argument when evaluating [{$originalType}]");
         }
 
-        $valueType = TypeConverter::convertToTypeScript(trim($types[0]), $queue, $typeReplacements);
+        $valueType = TypeConverter::convert($ctx, trim($types[0]));
 
         return new self(ArrayKind::NonEmptyList, $valueType);
     }
@@ -99,14 +83,9 @@ final class ArrayType implements TypeScriptTypeInterface
     /**
      * Create array<K,V> type with key-value pairs
      *
-     * @param  array<string, string>  $typeReplacements
      */
-    private static function createArray(
-        string $typeArgs,
-        Queue $queue,
-        array $typeReplacements,
-        string $originalType,
-    ): self {
+    private static function createArray(GenCtx $ctx, string $typeArgs, string $originalType): self
+    {
         $types = Utils::splitTopLevel(trim($typeArgs), ',');
         if (count($types) !== 2) {
             throw new InvalidArgumentException(
@@ -115,8 +94,9 @@ final class ArrayType implements TypeScriptTypeInterface
         }
 
         [$keyRaw, $valueRaw] = [trim($types[0]), trim($types[1])];
+
         $keyKind = ArrayKeyType::from($keyRaw);
-        $valueType = TypeConverter::convertToTypeScript($valueRaw, $queue, $typeReplacements);
+        $valueType = TypeConverter::convert($ctx, $valueRaw);
 
         return match ($keyKind) {
             ArrayKeyType::Int => new self(ArrayKind::List, $valueType),

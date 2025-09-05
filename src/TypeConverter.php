@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Typographos;
 
 use ReflectionClass;
+use ReflectionProperty;
+use Typographos\Attributes\InlineType;
 use Typographos\Dto\ArrayType;
+use Typographos\Dto\GenCtx;
+use Typographos\Dto\InlineRecordType;
 use Typographos\Dto\RawType;
 use Typographos\Dto\ReferenceType;
 use Typographos\Dto\ScalarType;
@@ -16,15 +20,10 @@ final class TypeConverter
 {
     /**
      * Convert resolved PHP type to TypeScript type
-     *
-     * @param  array<string, string>  $typeReplacements
      */
-    public static function convertToTypeScript(
-        string $phpType,
-        Queue $queue,
-        array $typeReplacements = [],
-    ): TypeScriptTypeInterface {
-        $types = Utils::splitTopLevel($phpType, '|');
+    public static function convert(GenCtx $ctx, string $type): TypeScriptTypeInterface
+    {
+        $types = Utils::splitTopLevel($type, '|');
         $parts = [];
 
         if (count($types) === 0) {
@@ -32,7 +31,7 @@ final class TypeConverter
         }
 
         foreach ($types as $t) {
-            $parts[] = self::convertSingleType($t, $queue, $typeReplacements);
+            $parts[] = self::convertType($ctx, $t);
         }
 
         if (count($parts) === 1) {
@@ -44,14 +43,9 @@ final class TypeConverter
 
     /**
      * Convert a single PHP type to TypeScript
-     *
-     * @param  array<string, string>  $typeReplacements
      */
-    private static function convertSingleType(
-        string $type,
-        Queue $queue,
-        array $typeReplacements,
-    ): TypeScriptTypeInterface {
+    private static function convertType(GenCtx $ctx, string $type): TypeScriptTypeInterface
+    {
         if ($type === '') {
             return ScalarType::unknown;
         }
@@ -61,9 +55,9 @@ final class TypeConverter
             $type = substr($type, 1);
         }
 
-        // Check for type replacements first
-        if (isset($typeReplacements[$type])) {
-            $ts = new RawType($typeReplacements[$type]);
+        // check for type replacements first
+        if (isset($ctx->typeReplacements[$type])) {
+            $ts = new RawType($ctx->typeReplacements[$type]);
 
             if ($allowsNull) {
                 return new UnionType([$ts, ScalarType::null]);
@@ -72,11 +66,9 @@ final class TypeConverter
             return $ts;
         }
 
-        // Handle built-in types
+        // handle built-in types
         if (Utils::isBuiltinType($type)) {
-            $ts = Utils::isArrayType($type)
-                ? ArrayType::from($typeReplacements, $type, $queue)
-                : ScalarType::from($type);
+            $ts = Utils::isArrayType($type) ? ArrayType::from($ctx, $type) : ScalarType::from($type);
 
             if ($allowsNull && $type !== 'null' && $type !== 'mixed') {
                 return new UnionType([$ts, ScalarType::null]);
@@ -85,16 +77,24 @@ final class TypeConverter
             return $ts;
         }
 
-        // Handle user-defined classes
+        // handle user-defined classes
         $userDefined = class_exists($type) && new ReflectionClass($type)->isUserDefined();
 
         if ($userDefined) {
-            $queue->enqueue($type);
+            // check if the property has the InlineType attribute
+            $shouldInline =
+                $ctx->parentProperty !== null && count($ctx->parentProperty->getAttributes(InlineType::class)) > 0;
+
+            if ($shouldInline) {
+                $ts = InlineRecordType::from($ctx, $type);
+            } else {
+                $ctx->queue->enqueue($type);
+                $ts = new ReferenceType($type);
+            }
+        } else {
+            $ts = ScalarType::unknown;
         }
 
-        $ts = $userDefined ? new ReferenceType($type) : ScalarType::unknown;
-
-        // Handle nullable class types
         if ($allowsNull) {
             return new UnionType([$ts, ScalarType::null]);
         }

@@ -10,8 +10,6 @@ use Typographos\Interfaces\TypeScriptTypeInterface;
 
 /**
  * UnionType represents a union of TypeScript types.
- *
- * @api
  */
 final class UnionType implements TypeScriptTypeInterface
 {

@@ -31,7 +31,18 @@ enum ArrayKeyType
         $hasStr = false;
 
         foreach ($keys as $key) {
-            $keyType = self::classifyKeyType($key);
+            $keyType = match (strtolower($key)) {
+                'int', 'positive-int', 'negative-int', 'int-mask', 'int-mask-of' => self::Int,
+                'string',
+                'non-empty-string',
+                'lowercase-string',
+                'uppercase-string',
+                'class-string',
+                'literal-string',
+                    => self::String,
+                'array-key' => self::Both,
+                default => throw new InvalidArgumentException("Unsupported array key type [{$key}]"),
+            };
 
             if ($keyType === self::Both) {
                 return self::Both;
@@ -45,25 +56,6 @@ enum ArrayKeyType
             $hasStr && $hasInt => self::Both,
             $hasStr => self::String,
             default => self::Int,
-        };
-    }
-
-    /**
-     * Classify a single key type string into Int, String, or Both
-     */
-    private static function classifyKeyType(string $keyType): self
-    {
-        return match (strtolower($keyType)) {
-            'int', 'positive-int', 'negative-int', 'int-mask', 'int-mask-of' => self::Int,
-            'string',
-            'non-empty-string',
-            'lowercase-string',
-            'uppercase-string',
-            'class-string',
-            'literal-string',
-                => self::String,
-            'array-key' => self::Both,
-            default => throw new InvalidArgumentException("Unsupported array key type [{$keyType}]"),
         };
     }
 }

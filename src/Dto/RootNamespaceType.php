@@ -9,20 +9,31 @@ use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Traits\HasChildrenTrait;
 use Typographos\Utils;
 
-/**
- * @api
- */
 final class RootNamespaceType implements TypeScriptTypeInterface
 {
     /** @use HasChildrenTrait<RecordType|NamespaceType> */
     use HasChildrenTrait;
 
-    public function addRecord(string $namespace, RecordType $record): void
+    public static function from(GenCtx $ctx): self
     {
-        $this->findNamespace($namespace)->addChild('RecordType::' . $record->name, $record);
+        $root = new self();
+
+        // process all classes in queue (queue may grow during processing)
+        while ($ctx->queue->isNotEmpty()) {
+            $className = $ctx->queue->shift();
+
+            // extract namespace: App\DTO\User → App\DTO
+            $namespace = substr($className, 0, strrpos($className, '\\'));
+
+            $record = RecordType::from($ctx, $className);
+
+            $root->addRecord($namespace, $record);
+        }
+
+        return $root;
     }
 
-    private function findNamespace(string $namespace): RootNamespaceType|NamespaceType
+    public function addRecord(string $namespace, RecordType $record): void
     {
         $parts = Utils::fqcnParts($namespace);
 
@@ -31,18 +42,20 @@ final class RootNamespaceType implements TypeScriptTypeInterface
         foreach ($parts as $part) {
             $nsKey = 'NamespaceType::' . $part;
 
-            /** @var NamespaceType|null $existingChild */
             $existingChild = $node->getChild($nsKey);
+
             if ($existingChild === null) {
                 $newNamespace = new NamespaceType($part);
+
                 $node->addChild($nsKey, $newNamespace);
+
                 $node = $newNamespace;
-                continue;
+            } else {
+                $node = $existingChild;
             }
-            $node = $existingChild;
         }
 
-        return $node;
+        $node->addChild('RecordType::' . $record->name, $record);
     }
 
     #[Override]

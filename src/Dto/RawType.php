@@ -7,9 +7,6 @@ namespace Typographos\Dto;
 use Override;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 
-/**
- * @api
- */
 final class RawType implements TypeScriptTypeInterface
 {
     public function __construct(

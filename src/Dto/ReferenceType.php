@@ -10,8 +10,6 @@ use Typographos\Utils;
 
 /**
  * ReferenceType represents a reference to another TypeScript type.
- *
- * @api
  */
 final class ReferenceType implements TypeScriptTypeInterface
 {

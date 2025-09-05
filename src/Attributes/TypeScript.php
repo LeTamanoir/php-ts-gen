@@ -8,8 +8,6 @@ use Attribute;
 
 /**
  * TypeScript attribute to mark a class for type generation.
- *
- * @api
  */
 #[Attribute(Attribute::TARGET_CLASS)]
 final class TypeScript

@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Typographos\Dto;
 
-/**
- * @api
- */
 final class RenderCtx
 {
     public function __construct(

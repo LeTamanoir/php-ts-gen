@@ -8,9 +8,6 @@ use Override;
 use Typographos\Interfaces\TypeScriptTypeInterface;
 use Typographos\Traits\HasChildrenTrait;
 
-/**
- * @api
- */
 final class NamespaceType implements TypeScriptTypeInterface
 {
     /**

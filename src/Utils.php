@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Typographos;
 
-/**
- * @api
- */
 final class Utils
 {
     /**
