@@ -44,7 +44,7 @@ class User
 ```php
 use Typographos\Generator;
 
-Generator::create()
+new Generator()
     ->discoverFrom(__DIR__.'/app/DTO')
     ->outputTo('generated.d.ts')
     ->withIndent("\t")
@@ -80,31 +80,26 @@ declare namespace App {
 use Typographos\Generator;
 
 // Simple usage
-Generator::create()
+new Generator()
     ->discoverFrom('src')                           // recursively scan for #[TypeScript]
     ->outputTo('types.d.ts')                        // output file path
     ->generate();
 
 // Advanced configuration
-Generator::create()
+new Generator()
     ->discoverFrom(__DIR__.'/app/DTO')
     ->outputTo('resources/js/types.d.ts')
     ->withIndent('    ')                            // default: "\t"
     ->withTypeReplacement(DateTime::class, 'string')
     ->generate();
 
-// Alternative: specify output path directly in generate()
-Generator::create()
-    ->discoverFrom('src')
-    ->withIndent("\t")
-    ->generate('types.d.ts');
 ```
 
 #### Usage Notes
 
 - **Auto-discovery**: Use `->discoverFrom('path')` to recursively scan for classes with `#[TypeScript]` attribute
 - **Explicit classes**: Pass class names to `->generate(['App\\DTO\\User', 'App\\DTO\\Post'])` to skip discovery
-- **Output flexibility**: Use `->outputTo('file.d.ts')` or `->generate('file.d.ts')`
+- **Output**: Use `->outputTo('file.d.ts')` to specify the output file path
 - **Property filtering**: Only public properties are emitted
 - **Array types**: Requires PHPDoc `@var` or constructor `@param` for `array`-typed properties
 
@@ -178,52 +173,57 @@ declare namespace App {
 - Reducing the number of generated interfaces for better readability
 - Embedding small DTOs directly into parent types
 
-### Programmatic API
+### Advanced Generation
 
-For advanced codegen scenarios, you can generate the namespace structure without writing to a file:
+For advanced scenarios, the library provides a straightforward fluent interface. All generation happens through the main `Generator` class:
 
 ```php
 use Typographos\Generator;
 
-$config = new Config();
-$generator = new Generator($config);
+// Simple usage - generates and writes to file
+new Generator()
+    ->discoverFrom('src/DTOs')
+    ->outputTo('types.d.ts')
+    ->withIndent("\t")
+    ->generate();
 
-// Generate namespace structure from your DTOs
-$rootNamespace = $generator->generateNamespace([
-    User::class,
-    Address::class,
-]);
+// Advanced configuration with type replacements
+new Generator()
+    ->discoverFrom('app/Models')
+    ->withTypeReplacement(\DateTime::class, 'string')
+    ->withTypeReplacement('int', 'bigint')
+    ->withIndent('    ')
+    ->outputTo('api-types.d.ts')
+    ->generate();
 
-// Add custom records programmatically
-$customRecord = new \Typographos\Dto\RecordType('ApiRoutes');
-$customRecord->addProperty('users', new \Typographos\Dto\ReferenceType(User::class));
-
-$rootNamespace->addRecord('Api', $customRecord);
-
-// Render to TypeScript
-$typeScript = $generator->renderNamespace($rootNamespace);
-
-// Write with custom logic
-file_put_contents('custom-output.d.ts', $typeScript);
+// Explicit class list (skips auto-discovery)
+new Generator()
+    ->withIndent("\t")
+    ->generate([
+        'App\\DTO\\User',
+        'App\\DTO\\Post',
+        'App\\DTO\\Comment',
+    ]);
 ```
 
-**Use cases for programmatic API:**
-- Building code generators that merge TypeScript types with other systems
-- Creating custom rendering formats (JSON Schema, OpenAPI specs, etc.)
-- Adding generated types alongside hand-written interfaces
-- Post-processing type structures before output
+**Key methods:**
+- `discoverFrom(string $directory)`: Auto-discover classes with `#[TypeScript]` attribute
+- `outputTo(string $filePath)`: Set output file path
+- `withIndent(string $indent)`: Set indentation style (default: `"\t"`)
+- `withTypeReplacement(string $phpType, string $tsType)`: Replace PHP types with custom TypeScript types
+- `generate(array $classNames = [])`: Generate and write types (optionally specify classes explicitly)
 
 ### Architecture
 
 The refactored architecture provides clean separation of concerns:
 
-- **`Generator`**: Main orchestrator that coordinates the generation process
-- **`ClassDiscovery`**: Finds classes with TypeScript attributes from directories or explicit lists  
-- **`TypeResolver`**: Resolves PHP types, handling special cases like `array`, `self`, `parent`, and unions
-- **`TypeConverter`**: Converts resolved PHP types to TypeScript type objects
-- **`FileWriter`**: Handles writing generated TypeScript to files
+- **`Generator`**: Main orchestrator with fluent interface that coordinates the entire generation process
+- **`ClassDiscovery`**: Static utility for finding classes with TypeScript attributes from directories
+- **`TypeResolver`**: Resolves PHP types, handling special cases like `array`, `self`, `parent`, and unions  
+- **`TypeConverter`**: Static utility that converts resolved PHP types to TypeScript type objects
+- **`Queue`**: Manages the processing queue of classes during generation
 
-This provides optimal performance through static utility classes while maintaining an intuitive fluent API.
+The library uses static utility classes for optimal performance while maintaining an intuitive fluent API through the main `Generator` class.
 
 ### Limitations and notes
 

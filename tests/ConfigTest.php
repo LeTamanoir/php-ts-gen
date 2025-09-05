@@ -2,30 +2,30 @@
 
 declare(strict_types=1);
 
-use Typographos\Config;
+use Typographos\Generator;
 
 it('has sensible defaults', function (): void {
-    $config = new Config();
+    $generator = new Generator();
 
-    expect($config->indent)->toBe("\t");
-    expect($config->typeReplacements)->toBe([]);
-    expect($config->autoDiscoverDirectory)->toBeNull();
-    expect($config->filePath)->toBe('generated.d.ts');
+    expect($generator->indent)->toBe("\t");
+    expect($generator->typeReplacements)->toBe([]);
+    expect($generator->discoverDirectory)->toBeNull();
+    expect($generator->filePath)->toBe('generated.d.ts');
 });
 
-it('can set custom values in constructor', function (): void {
-    $config = new Config()
+it('can set custom values using fluent interface', function (): void {
+    $generator = new Generator()
         ->withIndent('  ')
         ->withTypeReplacement('int', 'number')
         ->withTypeReplacement(\DateTime::class, 'string')
-        ->withAutoDiscoverDirectory('/some/path')
-        ->withFilePath('custom.d.ts');
+        ->discoverFrom('/some/path')
+        ->outputTo('custom.d.ts');
 
-    expect($config->indent)->toBe('  ');
-    expect($config->typeReplacements)->toBe([
+    expect($generator->indent)->toBe('  ');
+    expect($generator->typeReplacements)->toBe([
         'int' => 'number',
         \DateTime::class => 'string',
     ]);
-    expect($config->autoDiscoverDirectory)->toBe('/some/path');
-    expect($config->filePath)->toBe('custom.d.ts');
+    expect($generator->discoverDirectory)->toBe('/some/path');
+    expect($generator->filePath)->toBe('custom.d.ts');
 });
